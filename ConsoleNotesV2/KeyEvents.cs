@@ -19,6 +19,7 @@ internal class KeyEvents
 
         while (true)
         {
+            if (Program.KeyEventListenerPaused) continue;
             keyinfo = Console.ReadKey(true);
 
             if (TriggerKeys.Contains(keyinfo.Key))
