@@ -13,13 +13,12 @@ internal class KeyEvents
         this.TriggerKeys = triggerKeys;
     }
 
-    public void Start(ref bool pauseReference)
+    public void Start()
     {
         ConsoleKeyInfo keyinfo;
 
         while (true)
         {
-            if (pauseReference) continue;
             keyinfo = Console.ReadKey(true);
 
             if (TriggerKeys.Contains(keyinfo.Key))
