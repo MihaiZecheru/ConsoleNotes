@@ -8,7 +8,8 @@ public class Program
 {
     private static List<string> Notes;
     private static NotesRange displayRange;
-    private static Mode mode = Mode.View;
+    private static Mode mode = Mode.ViewNotes;
+    public static bool KeyEventListenerPaused = false;
 
     public static void Main()
     {
@@ -48,8 +49,7 @@ public class Program
             ConsoleKey.V,
             ConsoleKey.N,
             ConsoleKey.D,
-            ConsoleKey.E,
-            ConsoleKey.Enter,
+            ConsoleKey.E
         }).Start();
     }
 
@@ -67,31 +67,21 @@ public class Program
             displayRange.Start--;
             displayRange.End--;
             Update();
+            Console.SetCursorPosition(0, 0);
         } else if (key == ConsoleKey.V)
         {
             // Switch to view mode
-            Console.CursorVisible = false;
-            mode = Mode.ViewNotes;
-            Update();
+            UpdateMode(Mode.ViewNotes);
         } else if (key == ConsoleKey.N)
         {
             // Switch to NewNote mode
-            mode = Mode.NewNote;
-            Update();
+            UpdateMode(Mode.NewNote);
         } else if (key == ConsoleKey.E)
         {
-            mode = Mode.EditNote;
-            Update();
+            UpdateMode(Mode.EditNote);
         } else if (key == ConsoleKey.D)
         {
-            mode = Mode.DeleteNote;
-            Update();
-        } else if (key == ConsoleKey.Enter)
-        {
-            if (mode == Mode.WritingNote)
-            {
-
-            }
+            UpdateMode(Mode.DeleteNote);
         }
     };
 
@@ -102,6 +92,9 @@ public class Program
 
         if (mode == Mode.ViewNotes)
         {
+            // Hide cursor
+            Console.CursorVisible = false;
+
             // In any given range (s - e), the range starts at s and ends at s + count. count = (e - s + 1)
             List<string> notes = Notes.GetRange(displayRange.Start, displayRange.End - displayRange.Start + 1);
 
@@ -109,9 +102,6 @@ public class Program
             {
                 AnsiConsole.Write(new Panel(new Text(notes[i])).Expand());
             }
-
-            // Show the new note panel
-            Console.SetCursorPosition(0, 0);
         } else if (mode == Mode.NewNote)
         {
             var rule = new Spectre.Console.Rule("[deeppink3]Create New Note[/]");
@@ -125,22 +115,105 @@ public class Program
 
             add_title_prompt.DisabledStyle = new Style(Color.Yellow);
             bool add_title = AnsiConsole.Prompt(add_title_prompt) == "Yes";
-            
+
+            string title = "{{TITLE_EMPTY}}";
+
             if (add_title)
             {
-                string title = AnsiConsole.Ask<string>("[yellow]Title your [deeppink3]note[/]:[/]");
-                Console.WriteLine(title)    ;
+                title = AnsiConsole.Ask<string>("[yellow]Title your [deeppink3]note[/]:[/]");
             }
 
-            mode = Mode.WritingNote;
+            CreateNote(title);
         }
+    }
+
+    internal static void UpdateMode(Mode m)
+    {
+        mode = m;
+        Update();
     }
 
     public static void SaveNotes()
     {
-        string notes = string.Join("{<sep>}", Notes);
+        string notes = string.Join("{<sep>}", Notes) + "{<sep>}";
         File.WriteAllText(@"C:\ConsoleNotes\notes.txt", notes);
-        Update();
+    }
+
+    public static void CreateNote(string title)
+    {
+        KeyEventListenerPaused = true;
+
+        char[] note = new char[10000];
+        int len = 0;
+        int c = 0;
+
+        while (true)
+        {
+            ConsoleKeyInfo keyinfo = Console.ReadKey(true);
+
+            if (keyinfo.Key == ConsoleKey.Enter)
+            {
+                // Pressing Enter creates the note
+                if (len > 0)
+                {
+                    break;
+                }
+            }
+            else if (keyinfo.Key == ConsoleKey.Backspace || keyinfo.Key == ConsoleKey.Delete)
+            {
+                // No chars to delete
+                if (c == 0) continue;
+
+                // Delete last char
+                note[--c] = ' ';
+                len--;
+
+                // Rewrite contents to screen
+                Console.SetCursorPosition(0, 1);
+                Console.Write(note);
+                Console.CursorLeft--;
+                note[c] = '\0';
+                continue;
+            }
+            else if (keyinfo.Key == ConsoleKey.LeftArrow)
+            {
+                c--;
+                Console.CursorLeft--;
+                continue;
+            }
+            else if (keyinfo.Key == ConsoleKey.RightArrow && c < len)
+            {
+                c++;
+                Console.CursorLeft++;
+            }
+            else if (((int)keyinfo.Key < 48 || (int)keyinfo.Key > 111) || keyinfo.Key == ConsoleKey.LeftWindows || keyinfo.Key == ConsoleKey.RightWindows || keyinfo.Key == ConsoleKey.Applications || keyinfo.Key == ConsoleKey.Sleep)
+            {
+                continue;
+            }
+
+            Console.Write(keyinfo.KeyChar);
+            note[c] = keyinfo.KeyChar;
+            len++;
+            c++;
+        }
+
+        char[] chars = new char[len];
+        for (int i = 0; i < chars.Length; i++)
+        {
+            chars[i] = note[i];
+        }
+
+        // Create the note
+        Notes.Add(new string(chars).Trim());
+        SaveNotes();
+
+        // Move range to account for new note
+        displayRange.Start++;
+        displayRange.End++;
+
+        // Switch to view the new note
+        UpdateMode(Mode.ViewNotes);
+        KeyEventListenerPaused = false;
     }
 
     public static void DeleteNote(string note)
