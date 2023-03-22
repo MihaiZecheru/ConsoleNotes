@@ -18,9 +18,5 @@ internal enum Mode
     /// <summary>
     /// For when the user is in the new note menu, but is not writing the note yet
     /// </summary>
-    NewNote,
-    /// <summary>
-    /// For when the user is in the middle of writing his note
-    /// </summary>
-    WritingNote
+    NewNote
 }
