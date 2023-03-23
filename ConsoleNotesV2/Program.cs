@@ -1,5 +1,6 @@
 ﻿using Spectre.Console;
 using System.Net.Security;
+using System.Xml.Schema;
 
 namespace ConsoleNotes;
 
@@ -239,16 +240,16 @@ public class Program
                 Console.CursorLeft = lines[cli].Count;
                 continue;
             }
-            // Move to beginning of text - Ctrl+H
-            else if (keyinfo.Key == ConsoleKey.H && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control))
+            // Move to beginning of text - Ctrl+H & Ctrl+UpArrow
+            else if ((keyinfo.Key == ConsoleKey.H || keyinfo.Key == ConsoleKey.UpArrow) && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control))
             {
                 ci = 0;
                 cli = 0;
                 Console.SetCursorPosition(0, 1);
                 continue;
             }
-            // Move to end of text - Ctrl+E
-            else if (keyinfo.Key == ConsoleKey.E && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control))
+            // Move to end of text - Ctrl+E & Ctrl+DownArrow
+            else if ((keyinfo.Key == ConsoleKey.E || keyinfo.Key == ConsoleKey.DownArrow) && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control))
             {
                 cli = lines.Count - 1;
                 ci = lines[cli].Count;
@@ -285,7 +286,7 @@ public class Program
                 }
                 else
                 {
-                    // Move to next line if it exists or make a new one then more to it
+                    // Move to next line if it exists or make a new one then move to it
                     if (cli + 1 == lines.Count)
                     {
                         // Create a new line
@@ -298,6 +299,34 @@ public class Program
                     Console.SetCursorPosition(0, Console.CursorTop + 1);
                 }
 
+                continue;
+            }
+            // Move cursor down once - DownArrow
+            else if (keyinfo.Key == ConsoleKey.DownArrow)
+            {
+                // Move to next line if it exists or make a new one then move to it
+                if (cli + 1 == lines.Count)
+                {
+                    // Create a new line
+                    lines.Add(new List<char>());
+                }
+
+                // Move to the next line
+                int left_pos = (Console.CursorLeft < lines[++cli].Count) ? Console.CursorLeft : lines[cli].Count;
+                ci = left_pos;
+                Console.SetCursorPosition(left_pos, Console.CursorTop + 1);
+                continue;
+            }
+            // Move cursor up once - UpArrow
+            else if (keyinfo.Key == ConsoleKey.UpArrow)
+            {
+                // If the current line is not the first line
+                if (cli > 0)
+                {
+                    int left_pos = (Console.CursorLeft < lines[--cli].Count) ? Console.CursorLeft : lines[cli].Count;
+                    ci = left_pos;
+                    Console.SetCursorPosition(left_pos, Console.CursorTop - 1);
+                }
                 continue;
             }
             // Delete previous char or word - Backspace & Ctrl+Backspace
@@ -341,10 +370,14 @@ public class Program
                             // Clear entire line
                             Console.CursorLeft = 0;
                             Console.Write(new string(' ', Console.BufferWidth));
-                            Console.CursorLeft = 0;
 
                             // Delete until the beginning of the line
                             lines[cli].RemoveRange(0, ci);
+
+                            // Rewrite line
+                            Console.CursorLeft = 0;
+                            Console.Write(new string(lines[cli].ToArray()));
+                            Console.CursorLeft = 0;
                             ci = 0;
                         }
                     }
@@ -396,12 +429,55 @@ public class Program
 
                 continue;
             }
+            // Delete next char or word - Delete & Ctrl+Delete
             else if (keyinfo.Key == ConsoleKey.Delete)
             {
                 // Delete until the next space (one word) - Ctrl+Delete
                 if (keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control))
                 {
+                    // If index is not at the end
+                    if (ci != lines[cli].Count)
+                    {
+                        // If the current char and first char of the range is a space, skip it in the calculations
+                        int adjusted_ci;
+                        if (lines[cli][ci] == ' ') adjusted_ci = ci + 1;
+                        else if (lines[cli][ci + 1] == ' ') adjusted_ci = ci + 2;
+                        else adjusted_ci = ci;
 
+                        List<char> range = lines[cli].GetRange(adjusted_ci, lines[cli].Count - adjusted_ci);
+                        
+                        // If the segment contains a space
+                        if (range.Contains(' '))
+                        {
+                            // Start looking from the current index
+                            // Get index of space inside the range, adjusted_ci is added to be able to use the closest_following_index var as an index in the original list
+                            int closest_following_space = range.IndexOf(' ') + adjusted_ci + 1;
+                            
+                            // Remove the chars
+                            lines[cli].RemoveRange(adjusted_ci, closest_following_space - adjusted_ci);
+
+                            // Rewrite the line
+                            int previous_cursor_pos = Console.CursorLeft;
+                            Console.CursorLeft = 0; //                                          clear line till end of screen
+                            Console.Write(new string(lines[cli].ToArray()) + new string(' ', Console.BufferWidth - lines[cli].Count));
+                            Console.CursorLeft = previous_cursor_pos;
+                            ci = previous_cursor_pos;
+                        }
+                        else
+                        {
+                            // Clear line from current pos to end
+                            int previous_cursor_pos = Console.CursorLeft;
+                            Console.Write(new string(' ', range.Count));
+                            Console.CursorLeft = previous_cursor_pos;
+
+                            // Delete until the beginning of the line
+                            lines[cli].RemoveRange(ci, lines[cli].Count - ci);
+
+                            // Rewrite end of line
+                            Console.Write(new string(lines[cli].GetRange(ci, lines[cli].Count - ci).ToArray()) + new string(' ', range.Count));
+                            Console.CursorLeft = previous_cursor_pos;
+                        }
+                    }
                 }
                 // Delete one character - Delete
                 else
