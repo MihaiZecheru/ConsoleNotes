@@ -126,9 +126,12 @@ public class Program
 
             for (int i = 0; i < notes.Count; i++)
             {
-                AnsiConsole.Write(new Panel(new Text(notes[i])).Expand());
+                Panel panel = new Panel(new Text(notes[i]));
+                panel.BorderStyle = new Style(ColorCycle.Next());
+                AnsiConsole.Write(panel.Expand());
             }
-        } else if (mode == Mode.NewNote)
+        }
+        else if (mode == Mode.NewNote)
         {
             var rule = new Spectre.Console.Rule("[deeppink3]Write A New Note[/]");
             rule.Style = new Style(Color.Yellow);
