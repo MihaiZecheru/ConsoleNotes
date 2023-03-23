@@ -11,6 +11,7 @@ public class Program
     private static int displayRangeCount = 10;
     private static Mode mode = Mode.ViewNotes;
     public static bool KeyEventListenerPaused = false;
+    private static int TAB_SIZE = 4;
 
     public static void Main()
     {
@@ -567,28 +568,51 @@ public class Program
             }
 
             /***
+             * The easiest way to fix the tab issue
+             * where it appears as 8 spaces instead of a single \t char
+             * is to treat the tab as 8 spaces
+             * which is done by replacing it with 8 spaces
+             * before it's saved to the note
+             ***/
+
+            /***
+             * Below is where the pressed char is added to the note
+             ***/
+
+            // This array will typically hold only one key, but if tab is pressed, it will hold four spaces
+            List<char> chars_to_add = new List<char>() { keyinfo.KeyChar };
+
+            /***
              * IMPORTANT: If the line has too many characters in it, overflow
              * will be prevented by blocking new characters from being written
              ***/
-            if (lines[cli].Count == Console.BufferWidth - 2) continue;
+            if (keyinfo.Key == ConsoleKey.Tab && lines[cli].Count + 4 >= Console.BufferWidth - 2) continue;// |    aa  |
+            else if (lines[cli].Count == Console.BufferWidth - 2) continue;
+
+            // Pressing TAB will add four spaces instead of a \t char
+            if (keyinfo.Key == ConsoleKey.Tab)
+            {
+                chars_to_add = new string(' ', Program.TAB_SIZE).ToList();
+            }
 
             // If added to the end of the line
             if (ci == lines[cli].Count)
             {
-                // Add the char to the note
-                lines[cli].Add(keyinfo.KeyChar);
-                Console.Write(keyinfo.KeyChar);
-                ci++;
+                // Add the char(s) to the note
+                lines[cli].AddRange(chars_to_add);
+                Console.Write(chars_to_add.ToArray());
+                ci += chars_to_add.Count;
             }
             else
             {
-                /*** Insert char into the note ***/
-                lines[cli].Insert(ci++, keyinfo.KeyChar);
+                /*** Insert char(s) into the note ***/
+                lines[cli].InsertRange(ci, chars_to_add);
+                ci += chars_to_add.Count;
 
                 int previous_cursor_pos = Console.CursorLeft;
                 Console.CursorLeft = 0;
                 Console.Write(lines[cli].ToArray());
-                Console.CursorLeft = previous_cursor_pos + 1;
+                Console.CursorLeft = previous_cursor_pos + chars_to_add.Count;
             }
         }
 
