@@ -18,5 +18,10 @@ internal enum Mode
     /// <summary>
     /// For when the user is in the new note menu, but is not writing the note yet
     /// </summary>
-    NewNote
+    NewNote,
+    /// <summary>
+    /// For when the user is editing their settings, such as what number corresponds to each markup color (0 - 9)
+    /// and whether they want to have the rainbow effect on their notes while in Mode.ViewNotes
+    /// </summary>
+    EditSettings
 }
