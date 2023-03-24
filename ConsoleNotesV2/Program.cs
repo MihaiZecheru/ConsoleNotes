@@ -1,6 +1,5 @@
 ﻿using Spectre.Console;
-using System.Net.Security;
-using System.Xml.Schema;
+using System.Text.RegularExpressions;
 
 namespace ConsoleNotes;
 
@@ -222,6 +221,14 @@ public class Program
             {
                 /*** Creates a new line ***/
 
+                /***
+                 * IMPORTANT: if the cursor is at the bottom of the screen
+                 * do not allow any text to be written
+                 * 
+                 * The user must expand their console to write more
+                 ***/
+                if (cli == Console.BufferHeight - 3) continue;
+
                 // Create the line
                 lines.Add(new List<char>());
                 cli++;
@@ -246,6 +253,7 @@ public class Program
                 Console.CursorLeft = lines[cli].Count;
                 continue;
             }
+            // Ctrl+Home doesn't register as an event, so it's not included
             // Move to beginning of text - Ctrl+H & Ctrl+UpArrow
             else if ((keyinfo.Key == ConsoleKey.H || keyinfo.Key == ConsoleKey.UpArrow) && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control))
             {
@@ -254,6 +262,7 @@ public class Program
                 Console.SetCursorPosition(0, 1);
                 continue;
             }
+            // Ctrl+End doesn't register as an event, so it's not included
             // Move to end of text - Ctrl+E & Ctrl+DownArrow
             else if ((keyinfo.Key == ConsoleKey.E || keyinfo.Key == ConsoleKey.DownArrow) && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control))
             {
@@ -376,6 +385,14 @@ public class Program
                     // At the end of the text - must move to next line
                     else
                     {
+                        /***
+                         * IMPORTANT: if the cursor is at the bottom of the screen
+                         * do not allow any text to be written
+                         * 
+                         * The user must expand their console to write more
+                         ***/
+                        if (cli == Console.BufferHeight - 3) continue;
+
                         // Move to next line if it exists or make a new one
                         if (cli + 1 == lines.Count)
                         {
@@ -395,6 +412,14 @@ public class Program
             // Move cursor down once - DownArrow
             else if (keyinfo.Key == ConsoleKey.DownArrow)
             {
+                /***
+                 * IMPORTANT: if the cursor is at the bottom of the screen
+                 * do not allow any text to be written
+                 * 
+                 * The user must expand their console to write more
+                 ***/
+                if (cli == Console.BufferHeight - 3) continue;
+
                 // Move to next line if it exists or make a new one then move to it
                 if (cli + 1 == lines.Count)
                 {
@@ -637,13 +662,82 @@ public class Program
 
                 continue;
             }
+            /***
+             * Markup keybinds
+             ***/
+            else if (keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control))
+            {
+                /***
+                 * Pressing one of these keybinds will
+                 * insert a spectre.console markup style
+                 * such as italics, underline, etc.
+                 * 
+                 * For colors, the user can press a number
+                 * between 0 - 9, which he can map to a specific hex
+                 * on his own by going to the settings via Alt+S
+                 ***/
+
+                List<char> _chars_to_add = new List<char>();
+
+                switch (keyinfo.Key)
+                {
+                    // Italics - Ctrl+I
+                    case ConsoleKey.I:
+                        _chars_to_add.AddRange("[italic][/]");
+                        break;
+                    // Bold - Ctrl+B
+                    // Blink - Ctrl+Shift+B
+                    case ConsoleKey.B:
+                        // Ctrl+B
+                        if (keyinfo.Modifiers.HasFlag(ConsoleModifiers.Shift)) _chars_to_add.AddRange("[rapidblink][/]");
+                        // Ctrl+Shift+B
+                        else _chars_to_add.AddRange("[bold][/]");
+                        break;
+                    // Underline - Ctrl+U
+                    case ConsoleKey.U:
+                        _chars_to_add.AddRange("[underline][/]");
+                        break;
+                    // Strikethrough - Ctrl+Shift+5
+                    case ConsoleKey.D5:
+                        if (!keyinfo.Modifiers.HasFlag(ConsoleModifiers.Shift)) continue;
+                        _chars_to_add.AddRange("[strikethrough][/]");
+                        break;
+                    // Dim - Ctrl+D
+                    case ConsoleKey.D:
+                        _chars_to_add.AddRange("[dim][/]");
+                        break;
+                }
+
+                /***
+                 * IMPORTANT: If the line has too many characters in it, overflow
+                 * will be prevented by blocking new characters from being written
+                 ***/
+                if (lines[cli].Count + _chars_to_add.Count >= Console.BufferWidth - 2) continue;
+
+                // Insert markup
+                lines[cli].InsertRange(ci, _chars_to_add);
+
+                // Get ci & cursor pos for after rewrite
+                // -3 is for moving the cursor in between the markup tags (len [/])
+                int loc = ci + _chars_to_add.Count - 3;
+
+                // Rewrite line on screen
+                Console.CursorLeft = 0;
+                Console.Write(new string(' ', Console.BufferWidth));
+                Console.CursorLeft = 0;
+                Console.Write(lines[cli].ToArray());
+
+                Console.CursorLeft = loc;
+                ci = loc;
+                continue;
+            }
             // Skip if the pressed key will not output an alphanumeric character
             else if (
                  ((int)keyinfo.Key < 48 || (int)keyinfo.Key > 111 || keyinfo.Key == ConsoleKey.LeftWindows || keyinfo.Key == ConsoleKey.RightWindows || keyinfo.Key == ConsoleKey.Applications || keyinfo.Key == ConsoleKey.Sleep)
                  && keyinfo.Key != ConsoleKey.Spacebar && keyinfo.Key != ConsoleKey.Tab
                  /* OEM keys */
                  && (int)keyinfo.Key < 186 && (int)keyinfo.Key > 223
-             )
+            )
             {
                 // If the key is not alphanum, don't show it
                 continue;
@@ -656,6 +750,38 @@ public class Program
                 UpdateMode(Mode.ViewNotes);
                 KeyEventListenerPaused = false;
                 return;
+            }
+
+            // Check if the key was TAB and if the cursor is within a set of markup tags [italic]cursor here[/]
+            // If the above are true, move the cursor to just outside the closing tag [/]
+            if (keyinfo.Key == ConsoleKey.Tab)
+            {
+                // This is done by finding both an opening and ending tag to the right of the 'ci' if one exists
+                // If the [/] (closing tag) is closer than the opening tag, the 'ci' must be inside the markup
+                string search_range = new string(lines[cli].GetRange(ci, lines[cli].Count - ci).ToArray())!;
+
+                if (!search_range.Contains("[/]")) continue;
+                bool jump_to_tag_end = true;
+
+                // Check if the search_range also contains an opening tag
+                //                             (any)[anything but /](any)
+                if (Regex.IsMatch(search_range, @"^(.*?)\[([^\/]*?)\](.*)$"))
+                {
+                    string opening_tag_content = Regex.Match(search_range, @"\[([^\/]*?)\]").Value;
+                    int opening_tag_index = search_range.IndexOf(opening_tag_content);
+                    int closing_tag_index = search_range.IndexOf("[/]");
+
+                    // If the closing tag is closer than the opening tag, the cursor is inside the markup
+                    jump_to_tag_end = closing_tag_index < opening_tag_index;
+                }
+
+                if (jump_to_tag_end)
+                {
+                    // Move the cursor to just outside the closing tag
+                    ci += search_range.IndexOf("[/]") + 3;
+                    Console.CursorLeft = ci;
+                    continue;
+                }
             }
 
             /***
@@ -677,7 +803,7 @@ public class Program
              * IMPORTANT: If the line has too many characters in it, overflow
              * will be prevented by blocking new characters from being written
              ***/
-            if (keyinfo.Key == ConsoleKey.Tab && lines[cli].Count + 4 >= Console.BufferWidth - 2) continue;// |    aa  |
+            if (keyinfo.Key == ConsoleKey.Tab && lines[cli].Count + 4 >= Console.BufferWidth - 2) continue;
             else if (lines[cli].Count == Console.BufferWidth - 2) continue;
 
             // Pressing TAB will add four spaces instead of a \t char
