@@ -27,6 +27,7 @@ public class Program
         /* Setup console */
         Console.Title = "Console Notes";
         Console.CursorVisible = false;
+        Console.Clear();
         AnsiConsole.Write(new FigletText("ConsoleNotes").Centered().Color(ConsoleColor.DarkCyan));
 
         /* Load notes */
@@ -169,7 +170,7 @@ public class Program
 
     public static void SaveNotes()
     {
-        string notes = string.Join("{<sep>}", Notes) + "{<sep>}";
+        string notes = string.Join(Note.NoteSeparator, Notes) + Note.NoteSeparator;
         File.WriteAllText(@"C:\ConsoleNotes\notes.txt", notes);
     }
 
@@ -616,8 +617,8 @@ public class Program
 
         // Create the note
         Notes.Add(new Note(
-            Note.ParseMarkup(title),
-            Note.ParseMarkup(GetNoteContent(0))
+            title,
+            Note.ParseLinksMarkup(GetNoteContent(0))
         ));
         SaveNotes();
 
