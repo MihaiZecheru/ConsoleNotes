@@ -7,7 +7,8 @@
 /// </summary>
 internal static class ColorCycle
 {
-    private static int ColorsCount = 22;
+    // Capping the cycle at 13 prevents the notes from changing their color as the user scrolls as there are 11 notes displayed at a time
+    private static int ColorsCount = 13;
     private static int Index = 0;
     private static List<Spectre.Console.Color> Cycle = new List<Spectre.Console.Color>()
     {
