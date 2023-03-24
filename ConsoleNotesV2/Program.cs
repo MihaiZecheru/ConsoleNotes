@@ -229,8 +229,13 @@ public class Program
                  ***/
                 if (cli == Console.BufferHeight - 3) continue;
 
-                // Create the line
-                lines.Add(new List<char>());
+                // Create the line only if cursor is on the last line
+                if (cli == lines.Count - 1)
+                {
+                    lines.Add(new List<char>());
+                }
+
+                // Move the cursor down to the next line anyway
                 cli++;
                 ci = 0;
 
@@ -760,7 +765,7 @@ public class Program
                 // If the [/] (closing tag) is closer than the opening tag, the 'ci' must be inside the markup
                 string search_range = new string(lines[cli].GetRange(ci, lines[cli].Count - ci).ToArray())!;
 
-                if (!search_range.Contains("[/]")) continue;
+                if (!search_range.Contains("[/]")) goto after_tab_markup_check;
                 bool jump_to_tag_end = true;
 
                 // Check if the search_range also contains an opening tag
@@ -783,6 +788,8 @@ public class Program
                     continue;
                 }
             }
+
+            after_tab_markup_check:
 
             /***
              * The easiest way to fix the tab issue
