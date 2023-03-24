@@ -5,9 +5,11 @@ namespace ConsoleNotes;
 
 public class Note
 {
+    private static Regex LinksRegex = new Regex(@"(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})");
     public static string NoteSeparator = "{<@SEP>}";
     public static string TitleSeparator = "{<@TITLE>}";
     private static string EmptyTitle = "{{TITLE_EMPTY}}";
+
     private bool NoTitle { get; set; }
     public string Title { get; set; }
     public string Body { get; set; }
@@ -47,14 +49,12 @@ public class Note
 
     public static string ParseLinksMarkup(string text)
     {
-        var regex = new Regex(@"(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})");
-
-        foreach (Match match in regex.Matches(text))
+        foreach (Match match in LinksRegex.Matches(text))
         {
             string url = match.Value;
             text = text.Replace(url, $"[link]{url}[/]");
         }
-        
+
         return text;
     }
 }
