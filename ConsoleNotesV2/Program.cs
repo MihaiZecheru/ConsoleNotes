@@ -615,7 +615,10 @@ public class Program
         }
 
         // Create the note
-        Notes.Add(new Note(title, GetNoteContent(0)));
+        Notes.Add(new Note(
+            Note.ParseMarkup(title),
+            Note.ParseMarkup(GetNoteContent(0))
+        ));
         SaveNotes();
 
         // Move range to very end to account for new note
