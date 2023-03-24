@@ -6,7 +6,7 @@ namespace ConsoleNotes;
 
 public class Program
 {
-    private static List<string> Notes;
+    private static List<Note> Notes;
     private static NotesRange displayRange;
     private static int displayRangeCount = 10;
     private static Mode mode = Mode.ViewNotes;
@@ -31,9 +31,10 @@ public class Program
 
         /* Load notes */
         string notes = File.ReadAllText(notesFilepath);
-        Notes = notes.Split("{<sep>}").ToList();
-        if (Notes[Notes.Count - 1].Length == 0)
-            Notes.RemoveAt(Notes.Count - 1);
+        List<string> raw_notes = notes.Split(Note.NoteSeparator).ToList();
+        if (raw_notes[raw_notes.Count - 1].Length == 0)
+            raw_notes.RemoveAt(raw_notes.Count - 1);
+        Notes = raw_notes.Select(n => new Note(n)).ToList();
 
         /* Show most recent notes */
         displayRange = new NotesRange((Notes.Count - (displayRangeCount + 1) > 0) ? Notes.Count - (displayRangeCount + 1) : 0, Notes.Count - 1);
@@ -124,13 +125,11 @@ public class Program
             Console.CursorVisible = false;
 
             // In any given range (s - e), the range starts at s and ends at s + count. count = (e - s + 1)
-            List<string> notes = Notes.GetRange(displayRange.Start, displayRange.End - displayRange.Start + 1);
+            List<Note> notes = Notes.GetRange(displayRange.Start, displayRange.End - displayRange.Start + 1);
 
             for (int i = 0; i < notes.Count; i++)
             {
-                Panel panel = new Panel(new Text(notes[i]));
-                panel.BorderStyle = new Style(ColorCycle.Next());
-                AnsiConsole.Write(panel.Expand());
+                notes[i].Display();
             }
         }
         else if (mode == Mode.NewNote)
@@ -148,7 +147,6 @@ public class Program
             bool add_title = AnsiConsole.Prompt(add_title_prompt) == "Yes";
 
             string title = "{{TITLE_EMPTY}}";
-
             if (add_title)
             {
                 title = AnsiConsole.Ask<string>("[yellow]Title your [deeppink3]note[/]:[/]");
@@ -617,7 +615,7 @@ public class Program
         }
 
         // Create the note
-        Notes.Add(GetNoteContent(0));
+        Notes.Add(new Note(title, GetNoteContent(0)));
         SaveNotes();
 
         // Move range to very end to account for new note
@@ -628,13 +626,13 @@ public class Program
         KeyEventListenerPaused = false;
     }
 
-    public static void DeleteNote(string note)
+    public static void DeleteNote(Note note)
     {
         Notes.RemoveAt(Notes.IndexOf(note));
         SaveNotes();
     }
 
-    public static void EditNote(string note, string newNote)
+    public static void EditNote(Note note, Note newNote)
     {
         Notes[Notes.IndexOf(note)] = newNote;
         SaveNotes();
