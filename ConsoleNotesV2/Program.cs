@@ -71,12 +71,14 @@ public class Program
     {
         ConsoleKey key = keyinfo.Key;
 
+        // Shift the viewing range down the screen by one (up once)
         if (key == ConsoleKey.DownArrow && displayRange.End != Notes.Count - 1 && mode == Mode.ViewNotes)
         {
             displayRange.Start++;
             displayRange.End++;
             Update();
         }
+        // Shift the viewing range up the screen by one (down once)
         else if (key == ConsoleKey.UpArrow && displayRange.Start != 0 && mode == Mode.ViewNotes)
         {
             displayRange.Start--;
@@ -84,30 +86,34 @@ public class Program
             Update();
             Console.SetCursorPosition(0, 0);
         }
+        // Switch to view mode
         else if (key == ConsoleKey.V)
         {
-            // Switch to view mode
             UpdateMode(Mode.ViewNotes);
         }
+        // Switch to NewNote mode
         else if (key == ConsoleKey.N)
         {
-            // Switch to NewNote mode
             UpdateMode(Mode.NewNote);
         }
+        // Switch to EditNote mode
         else if (key == ConsoleKey.E)
         {
             UpdateMode(Mode.EditNote);
         }
+        // Switch to DeleteNote mode
         else if (key == ConsoleKey.D)
         {
             UpdateMode(Mode.DeleteNote);
         }
+        // Move view range to the very top (home, beginning of the list, index 0)
         else if (key == ConsoleKey.H)
         {
             displayRange = new NotesRange(0, displayRangeCount);
             Update();
             Console.SetCursorPosition(0, 0);
         }
+        // Move view range to the very bottom (end, end of the list)
         else if (key == ConsoleKey.W)
         {
             displayRange = new NotesRange((Notes.Count - (displayRangeCount + 1) > 0) ? Notes.Count - (displayRangeCount + 1) : 0, Notes.Count - 1);
@@ -181,7 +187,7 @@ public class Program
         // lines[cli][ci]
         List<List<char>> lines = new List<List<char>> { new List<char>() };
 
-        // Current line index
+        // Current line index in 'note'
         int cli = 0;
 
         // Current index in 'note[cli]'
@@ -257,46 +263,131 @@ public class Program
                 continue;
             }
             // Move cursor left once - LeftArrow
+            // Move cursor left one word - Ctrl+LeftArrow
             else if (keyinfo.Key == ConsoleKey.LeftArrow)
             {
-                if (ci > 0)
+                // Move cursor left one word - Ctrl+LeftArrow
+                if (keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control))
                 {
-                    ci--;
-                    Console.CursorLeft--;
+                    // If index is not at the beginning
+                    if (ci > 0)
+                    {
+                        // If the first char is a space, skip it in the calculations
+                        int adjusted_ci = (lines[cli][ci - 1] == ' ') ? ci - 1 : ci;
+                        List<char> range = lines[cli].GetRange(0, adjusted_ci);
+
+                        // If the segment contains a space
+                        if (range.Contains(' '))
+                        {
+                            int nearest_previous_space = 0;
+                            while (true)
+                            {
+                                int index = range.FindIndex(nearest_previous_space + 1, x => x == ' ');
+
+                                // No new index found
+                                if (index == -1) break;
+                                else if (index > nearest_previous_space)
+                                    nearest_previous_space = index;
+                            }
+
+                            // Move the cursor
+                            int amount_to_shift = ci - nearest_previous_space;
+                            Console.CursorLeft -= amount_to_shift;
+                            ci -= amount_to_shift;
+                        }
+                        else
+                        {
+                            // Move to the very beginning
+                            // Required because the cursor, while not being at the very end, may be somewhere inside the first word
+                            // Meaning the cursor still needs to go to 0
+                            Console.CursorLeft = 0;
+                            ci = 0;
+                        }
+                    }
                 }
+                // Move cursor left once - LeftArrow
                 else
                 {
-                    if (cli > 0)
+                    if (ci > 0)
                     {
-                        ci = lines[cli - 1].Count;
-                        Console.SetCursorPosition(ci, Console.CursorTop - 1);
-                        cli--;
+                        ci--;
+                        Console.CursorLeft--;
+                    }
+                    else
+                    {
+                        if (cli > 0)
+                        {
+                            ci = lines[cli - 1].Count;
+                            Console.SetCursorPosition(ci, Console.CursorTop - 1);
+                            cli--;
+                        }
                     }
                 }
 
                 continue;
             }
             // Move cursor right once - RightArrow
+            // Move cursor right one word - Ctrl+RightArrow
             else if (keyinfo.Key == ConsoleKey.RightArrow)
             {
-                if (ci != lines[cli].Count)
+                // Move cursor right one word - Ctrl+RightArrow
+                if (keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control))
                 {
-                    ci++;
-                    Console.CursorLeft++;
+                    // If not at the end of the text
+                    if (ci != lines[cli].Count)
+                    {
+                        // If the current char and first char of the range is a space, skip it in the calculations
+                        int adjusted_ci;
+                        if (lines[cli][ci] == ' ') adjusted_ci = ci + 1;
+                        // Prevent index access error with this part before the &&
+                        else if (ci + 1 < lines[cli].Count && lines[cli][ci + 1] == ' ') adjusted_ci = ci + 2;
+                        else adjusted_ci = ci;
+
+                        List<char> range = lines[cli].GetRange(adjusted_ci, lines[cli].Count - adjusted_ci);
+
+                        // If the segment contains a space
+                        if (range.Contains(' '))
+                        {
+                            // Start looking from the current index
+                            // Get index of space inside the range, adjusted_ci is added to be able to use the closest_following_index var as an index in the original list
+                            int closest_following_space = range.IndexOf(' ') + adjusted_ci + 1;
+
+                            int amount_to_shift = closest_following_space - ci;
+                            Console.CursorLeft += amount_to_shift;
+                            ci += amount_to_shift;
+                        }
+                        else
+                        {
+                            // Simply move to the end of the line
+                            Console.CursorLeft = lines[cli].Count;
+                            ci = lines[cli].Count;
+                        }
+                    }
                 }
+                // Move cursor right once - RightArrow
                 else
                 {
-                    // Move to next line if it exists or make a new one then move to it
-                    if (cli + 1 == lines.Count)
+                    // If not at the end of the text
+                    if (ci != lines[cli].Count)
                     {
-                        // Create a new line
-                        lines.Add(new List<char>());
+                        ci++;
+                        Console.CursorLeft++;
                     }
+                    // At the end of the text - must move to next line
+                    else
+                    {
+                        // Move to next line if it exists or make a new one
+                        if (cli + 1 == lines.Count)
+                        {
+                            // Create a new line
+                            lines.Add(new List<char>());
+                        }
 
-                    // Move to the next line
-                    ci = 0;
-                    cli++;
-                    Console.SetCursorPosition(0, Console.CursorTop + 1);
+                        // Move to the next line
+                        ci = 0;
+                        cli++;
+                        Console.SetCursorPosition(0, Console.CursorTop + 1);
+                    }
                 }
 
                 continue;
@@ -335,7 +426,7 @@ public class Program
                 // Delete until the last space (one word) - Ctrl+Backspace
                 if (keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control))
                 {
-                    // If index s not at the beginning
+                    // If index is not at the beginning
                     if (ci > 0)
                     {
                         // If the first char is a space, skip it in the calculations
@@ -441,7 +532,8 @@ public class Program
                         // If the current char and first char of the range is a space, skip it in the calculations
                         int adjusted_ci;
                         if (lines[cli][ci] == ' ') adjusted_ci = ci + 1;
-                        else if (lines[cli][ci + 1] == ' ') adjusted_ci = ci + 2;
+                        // Prevent index access error with this part before the &&
+                        else if (ci + 1 < lines[cli].Count && lines[cli][ci + 1] == ' ') adjusted_ci = ci + 2;
                         else adjusted_ci = ci;
 
                         List<char> range = lines[cli].GetRange(adjusted_ci, lines[cli].Count - adjusted_ci);
