@@ -20,7 +20,7 @@ internal class CtrlZ
     /// <br></br><br></br>
     /// Each state is the entire note (List of List of chars)
     /// </summary>
-    private List<List<List<char>>> NoteStates = new List<List<List<char>>>();
+    private List<List<List<char>>> NoteStates = new List<List<List<char>>>(capacity: MAX_STATES);
 
     /// <summary>
     /// Keeps track of where the cursor was when the state was saved
@@ -46,7 +46,21 @@ internal class CtrlZ
         // Check if state should be added to the end
         if (ActiveIndex == NoteStates.Count - 1)
         {
-            NoteStates.Add(note);
+            // Making a copy is required to prevent every state from referencing the same object
+            List<List<char>> _note_copy = new List<List<char>>();
+            for (int i = 0; i < note.Count; i++)
+            {
+                List<char> _line_copy = new List<char>();
+                
+                for (int j = 0; j < note[i].Count; j++)
+                {
+                    _line_copy.Add(note[i][j]);
+                }
+
+                _note_copy.Add(_line_copy);
+            }
+
+            NoteStates.Add(_note_copy);
             CursorStates.Add(cursor_pos);
             ActiveIndex++;
         }
@@ -111,7 +125,8 @@ internal class CtrlZ
         // Otherwise, return the state which follows the current state (ActiveIndex + 1)
         else
         {
-            return Tuple.Create(NoteStates[++ActiveIndex], CursorStates[ActiveIndex]);
+            ActiveIndex++;
+            return Tuple.Create(NoteStates[ActiveIndex], CursorStates[ActiveIndex]);
         }
     }
 }
