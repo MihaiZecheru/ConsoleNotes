@@ -23,5 +23,9 @@ internal enum Mode
     /// For when the user is editing their settings, such as what number corresponds to each markup color (0 - 9)
     /// and whether they want to have the rainbow effect on their notes while in Mode.ViewNotes
     /// </summary>
-    EditSettings
+    EditSettings,
+    /// <summary>
+    /// For when the user is in the help menu reading about the application
+    /// </summary>
+    Help
 }
