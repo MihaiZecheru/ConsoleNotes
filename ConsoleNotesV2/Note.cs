@@ -1,6 +1,6 @@
 ﻿using Spectre.Console;
 using System.Text.RegularExpressions;
-using static System.Net.Mime.MediaTypeNames;
+using Spectre.Console.Json;
 
 namespace ConsoleNotes;
 
@@ -17,6 +17,11 @@ public class Note
     public static string NoteSeparator = "{<@SEP>}";
 
     /// <summary>
+    /// Used to separate the date from the title of a note
+    /// </summary>
+    public static string DateSeparator = "{<@DATE>}";
+
+    /// <summary>
     /// Use to separate the title of a note from the body, with the title appearing on the left side of the separator
     /// </summary>
     public static string TitleSeparator = "{<@TITLE>}";
@@ -25,6 +30,11 @@ public class Note
     /// The string used to represent a note without a title
     /// </summary>
     private static string EmptyTitle = "{{TITLE_EMPTY}}";
+
+    /// <summary>
+    /// Indicates whether a note is JSON-only
+    /// </summary>
+    public static string IsJsonIndicator = "{<@JSON-ONLY>}";
 
     /// <summary>
     /// Used for checking if a note doesn't have a title
@@ -47,16 +57,22 @@ public class Note
     public string CreatedAt { get; }
 
     /// <summary>
+    /// If the note is JSON-only, meaning the body is a JSON object with no additional text
+    /// </summary>
+    public bool IsJson;
+
+    /// <summary>
     /// For making a new note that doesn't already exist
     /// </summary>
     /// <param name="title">The title of the note</param>
     /// <param name="body">The content of the note</param>
-    public Note(string title, string body)
+    public Note(string title, string body, bool isJson)
     {
         Title = title;
         Body = body;
         NoTitle = (Title == EmptyTitle);
         CreatedAt = DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss");
+        IsJson = isJson;
     }
 
     /// <summary>
@@ -65,9 +81,16 @@ public class Note
     /// <param name="raw_note_content">The raw text from the notes.txt file, which still includes a title separator</param>
     public Note(string raw_note_content)
     {
+        // Check if note is JSON-only
+        IsJson = raw_note_content.StartsWith(IsJsonIndicator);
+        if (IsJson)
+        {
+            raw_note_content = raw_note_content.Substring(IsJsonIndicator.Length);
+        }
+
         // Separate note into date, title, and body
         string[] note = raw_note_content.Split(TitleSeparator);
-        string[] titleAndDate = note[0].Split("{<@DATE>}"); // [0] = empty string, [1] = date, [2] = title
+        string[] titleAndDate = note[0].Split(DateSeparator); // [0] = empty string, [1] = date, [2] = title
         string body = note[1]; // Just the body
 
         // Set attributes
@@ -94,7 +117,16 @@ public class Note
     private Tuple<Spectre.Console.Panel, Spectre.Console.Color> GetAsPanel()
     {
         // Panel and panel header
-        Panel panel = new Panel(new Markup(Body));
+        Panel panel;
+        if (IsJson)
+        {
+            panel = new Panel(new JsonText(Body));
+        }
+        else
+        {
+            panel = new Panel(new Markup(Body));
+        }
+        
         if (!NoTitle) panel.Header = new PanelHeader(Title);
         
         // Border color
@@ -131,8 +163,8 @@ public class Note
     /// <returns>The stringified note</returns>
     public override string ToString()
     {
-        // {<@DATE>}(.*?){<@DATE>}(.*?)<@TITLE>(.*?)
-        return $"{{<@DATE>}}{CreatedAt}{{<@DATE>}}{Title}{TitleSeparator}{Body}";
+        return (IsJson ? IsJsonIndicator : "")
+            + $"{DateSeparator}{CreatedAt}{DateSeparator}{Title}{TitleSeparator}{Body}";
     }
 
     /// <summary>

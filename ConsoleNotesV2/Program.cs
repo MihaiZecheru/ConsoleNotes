@@ -97,6 +97,7 @@ public class Program
             bool change_made = false;
             if (NotesOrderNewestFirst)
             {
+                // Bounds check
                 if (displayRange.End != Notes.Count - 1)
                 {
                     displayRange.Start++;
@@ -106,6 +107,7 @@ public class Program
             }
             else
             {
+                // Bounds check
                 if (displayRange.Start != 0)
                 {
                     displayRange.Start--;
@@ -122,6 +124,7 @@ public class Program
             bool change_made = false;
             if (NotesOrderNewestFirst)
             {
+                // Bounds check
                 if (displayRange.Start != 0)
                 {
                     displayRange.Start--;
@@ -131,6 +134,7 @@ public class Program
             }
             else
             {
+                // Bounds check
                 if (displayRange.End != Notes.Count - 1)
                 {
                     displayRange.Start++;
@@ -317,6 +321,9 @@ public class Program
         int save_every = 4;
         int chars_pressed = 0;
 
+        // Is JSON-Only
+        bool isJson = false;
+
         // Loop for getting user input
         while (true)
         {
@@ -349,14 +356,44 @@ public class Program
 
                 continue;
             }
+            // Toggle JSON-Only
+            else if (keyinfo.Key == ConsoleKey.J && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control))
+            {
+                // Toggle state of isJson
+                string header_text;
+                if (isJson)
+                {
+                    // Disable JSON-Only
+                    isJson = false;
+                    header_text = "Write A New Note";
+                }
+                else
+                {
+                    // Enable JSON-Only
+                    isJson = true;
+                    header_text = "Write A New Note - JSON Only";
+                }
+
+                // Remember cursor position
+                int cursor_pos_left = Console.CursorLeft;
+                int cursor_pos_top = Console.CursorTop;
+
+                // Make the rule
+                var rule = new Spectre.Console.Rule($"[deeppink3]{header_text}[/]");
+                rule.Style = new Style(Color.Yellow);
+
+                // Replace rule on screen
+                Console.SetCursorPosition(0, 0);
+                AnsiConsole.Write(rule);
+                Console.SetCursorPosition(cursor_pos_left, cursor_pos_top);
+                
+                continue;
+            }
             // Undo - Ctrl+Z
             else if (keyinfo.Key == ConsoleKey.Z && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control))
             {
                 // Get previous state
                 (lines, (ci, cli)) = states.Undo();
-                //lines = _lines;
-                //ci = _ci;
-                //cli = _cli;
 
                 /*** Rewrite screen ***/
 
@@ -364,7 +401,8 @@ public class Program
                 Console.Clear();
 
                 // Rewrite the horizontal rule
-                var rule = new Spectre.Console.Rule("[deeppink3]Write A New Note[/]");
+                string rule_header = isJson ? "Write A New Note" : "Write A New Note - JSON Only";
+                var rule = new Spectre.Console.Rule($"[deeppink3]{rule_header}[/]");
                 rule.Style = new Style(Color.Yellow);
                 AnsiConsole.Write(rule);
 
@@ -1130,8 +1168,8 @@ public class Program
             // Add ending bracket when pressing the opening bracket [ => []
             // And for regular parenthesis:
             // Add ending bracket when pressing the opening bracket ( => ()
-            //                square bracket                                    regular parenthesis
-            else if (keyinfo.Key == ConsoleKey.Oem4 || (keyinfo.Key == ConsoleKey.D9 && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Shift)))
+            //       square bracket                                                                             regular parenthesis
+            else if ((keyinfo.Key == ConsoleKey.Oem4 && !keyinfo.Modifiers.HasFlag(ConsoleModifiers.Shift)) || (keyinfo.Key == ConsoleKey.D9 && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Shift)))
             {
                 /***
                  * IMPORTANT: If the line has too many characters in it, overflow
@@ -1387,7 +1425,8 @@ public class Program
         // Create the note
         Notes.Add(new Note(
             title,
-            Note.ParseLinksMarkup(GetNoteContent(0))
+            Note.ParseLinksMarkup(GetNoteContent(0)),
+            isJson
         ));
         SaveNotes();
 
