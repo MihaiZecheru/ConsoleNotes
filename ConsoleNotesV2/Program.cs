@@ -1,6 +1,6 @@
 ﻿using Spectre.Console;
-using System.Security.Cryptography.X509Certificates;
 using System.Text.RegularExpressions;
+using System.Runtime.InteropServices;
 
 namespace ConsoleNotes;
 
@@ -9,9 +9,14 @@ public class Program
     private static List<Note> Notes;
     private static NotesRange displayRange;
     private static int displayRangeCount = 10;
+    private static bool NotesOrderNewestFirst = true;
     private static Mode mode = Mode.ViewNotes;
     public static bool KeyEventListenerPaused = false;
     private static int TAB_SIZE = 4;
+
+    // MessageBox for throwing exceptions after Ctrl+S (save note) fails due to a markup syntax error
+    [DllImport("User32.dll", CharSet = CharSet.Unicode)]
+    public static extern int MessageBox(IntPtr h, string m, string c, int type);
 
     public static void Main()
     {
@@ -52,10 +57,16 @@ public class Program
             ConsoleKey.DownArrow,
             // Move view range up once (down the list)
             ConsoleKey.UpArrow,
+            // Reverse the order the notes are displayed in - oldest first or newest first
+            ConsoleKey.R,
             // Move view range to the very top (home, beginning of the list, index 0)
             ConsoleKey.H,
-            // Move view range to the very bottom (end, end of the list)
+            // Move view range to the very top (home, beginning of the list, index 0)
             ConsoleKey.W,
+            // Move view range to the very bottom (end, end of the list)
+            ConsoleKey.S,
+            // Switch to Help mode (open the help menu)
+            ConsoleKey.H,
             // Set view mode
             ConsoleKey.V,
             // Set new note mode
@@ -86,6 +97,20 @@ public class Program
             Update();
             Console.SetCursorPosition(0, 0);
         }
+        // Reverse the order the notes are displayed in - oldest first or newest first
+        else if (key == ConsoleKey.R && mode == Mode.ViewNotes)
+        {
+            // TODO - this func
+            // TODO: also go around and anywhere a new NoteRange is made, use an if statement to check NotesOrderNewestFirst and make the range accordingly
+            if (NotesOrderNewestFirst)
+            {
+                NotesOrderNewestFirst = false;
+            }
+            else
+            {
+                NotesOrderNewestFirst = true;
+            }
+        }
         // Switch to view mode
         else if (key == ConsoleKey.V)
         {
@@ -107,17 +132,22 @@ public class Program
             UpdateMode(Mode.DeleteNote);
         }
         // Move view range to the very top (home, beginning of the list, index 0)
-        else if (key == ConsoleKey.H)
+        else if (key == ConsoleKey.W)
         {
             displayRange = new NotesRange(0, displayRangeCount);
             Update();
             Console.SetCursorPosition(0, 0);
         }
         // Move view range to the very bottom (end, end of the list)
-        else if (key == ConsoleKey.W)
+        else if (key == ConsoleKey.S)
         {
             displayRange = new NotesRange((Notes.Count - (displayRangeCount + 1) > 0) ? Notes.Count - (displayRangeCount + 1) : 0, Notes.Count - 1);
             Update();
+        }
+        // Switch to Help mode (open the help menu)
+        else if (key == ConsoleKey.H)
+        {
+            UpdateMode(Mode.Help);
         }
     };
 
@@ -219,12 +249,32 @@ public class Program
         {
             ConsoleKeyInfo keyinfo = Console.ReadKey(true);
 
-            // Create then save the note - Ctrl+S
+            // Create then save the note - Ctrl+S 
             if (keyinfo.Key == ConsoleKey.S && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control))
             {
-                // TODO: exceptions & popup if markuop doesnt compile
-                if (GetNoteContent(0).Length > 0) break;
-                else continue;
+                /***
+                 * As users are allowed to write markup using [style]content[/] syntax,
+                 * there is a chance for user error to leave unmatched brackets, or to use
+                 * a square bracket and forgetting to escape it when using the bracket normally.
+                 * 
+                 * An attempt will be made to compile the note prematurely, and if it fails,
+                 * the user will get a popup letting them know the note couldn't compile.
+                 ***/
+                try
+                {
+                    if (GetNoteContent(0).Length > 0)
+                    {
+                        new Markup(GetNoteContent(0));
+                        // break statement wont be reached if there is an error with the markup
+                        break; // Exit while loop, note will be created outside loop
+                    }
+                }
+                catch (InvalidOperationException e)
+                {
+                    MessageBox((IntPtr)0, $"Check your note for any markup errors. Make sure all square brackets are escaped with [[ or ]].\n\nError: {e.Message}", "Markup Syntax Error", 0);
+                }
+
+                continue;
             }
             // Undo - Ctrl+Z
             else if (keyinfo.Key == ConsoleKey.Z && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control))
@@ -641,6 +691,45 @@ public class Program
                         states.AddState(lines, Tuple.Create(ci, cli));
                         chars_pressed = 0;
                     }
+                    // If the cursor is at the very beginning, the current line should be appended to the previous line
+                    else
+                    {
+                        // Nowhere to go if on the first line
+                        if (cli == 0) continue;
+
+                        /***
+                         * IMPORTANT: If the line has too many characters in it, overflow
+                         * will be prevented by blocking new characters from being written
+                         ***/
+                        if (lines[cli].Count + lines[cli - 1].Count >= Console.BufferWidth - 2) continue;
+
+                        // Used for placing the cursor
+                        int prev_line_length = lines[cli - 1].Count;
+
+                        // Append this line to the one before it
+                        lines[cli - 1].AddRange(lines[cli]);
+
+                        // Delete the line
+                        lines.RemoveAt(cli--);
+
+                        /*** Update the screen ***/
+
+                        // Remember the position to go to
+                        int cursor_pos = Console.CursorTop - 1;
+                        ci = prev_line_length;
+
+                        // There is too much text to wipe, so the best move is to clear everything and rewrite
+                        int[] start_rewriting_from = new int[2] { Console.CursorLeft, Console.CursorTop - 1 }; // Rewrite the current line as well (top - 1)
+                        Console.Write(new string(' ', (lines.Count - cli) * Console.BufferWidth));
+                        Console.SetCursorPosition(start_rewriting_from[0], start_rewriting_from[1]);
+
+                        Console.Write(GetNoteContent(cli));
+                        Console.SetCursorPosition(ci, cursor_pos);
+
+                        // Save new state - pretty big change (moving the lines)
+                        states.AddState(lines, Tuple.Create(ci, cli));
+                        chars_pressed = 0;
+                    }
                 }
                 // Delete one character - Backspace
                 else
@@ -714,6 +803,12 @@ public class Program
                         // Nowhere to go if on the first line
                         if (cli == 0) continue;
 
+                        /***
+                         * IMPORTANT: If the line has too many characters in it, overflow
+                         * will be prevented by blocking new characters from being written
+                         ***/
+                        if (lines[cli].Count + lines[cli - 1].Count >= Console.BufferWidth - 2) continue;
+
                         // Used for placing the cursor
                         int prev_line_length = lines[cli - 1].Count;
 
@@ -722,22 +817,6 @@ public class Program
                         
                         // Delete the line
                         lines.RemoveAt(cli--);
-
-                        // Check save
-                        if (chars_pressed == 0)
-                        {
-                            chars_pressed += 2; // Deleting a line counts as 2 chars pressed
-                            if (chars_pressed >= save_every)
-                            {
-                                states.AddState(lines, Tuple.Create(ci, cli));
-                                chars_pressed = 0;
-                            }
-                        }
-                        else
-                        {
-                            // This delete simply undid a change, so chars_pressed should be decremented by 2 to even out the chars_pressed_tracker
-                            chars_pressed -= 2;
-                        }
 
                         /*** Update the screen ***/
 
@@ -752,6 +831,10 @@ public class Program
                         
                         Console.Write(GetNoteContent(cli));
                         Console.SetCursorPosition(ci, cursor_pos);
+
+                        // Save new state - pretty big change (moving the lines)
+                        states.AddState(lines, Tuple.Create(ci, cli));
+                        chars_pressed = 0;
                     }
                 }
 
@@ -811,6 +894,47 @@ public class Program
                         states.AddState(lines, Tuple.Create(ci, cli));
                         chars_pressed = 0;
                     }
+                    // If the cursor is at the very end of the line, the following (next) line should be appended to the current line
+                    else
+                    {
+                        /***
+                         * IMPORTANT: If the line has too many characters in it, overflow
+                         * will be prevented by blocking new characters from being written
+                         ***/
+                        if (lines[cli].Count + lines[cli + 1].Count >= Console.BufferWidth - 2) continue;
+
+                        // Append the next line to this one
+                        lines[cli].AddRange(lines[cli + 1]);
+
+                        // Delete the next line
+                        lines.RemoveAt(cli + 1);
+
+                        /*** Update the screen ***/
+
+                        // Remember the initial position
+                        // Note: position stays the same
+                        int c_left = Console.CursorLeft;
+                        int c_top = Console.CursorTop;
+
+                        // There is too much text to wipe, so the best move is to clear everything and rewrite
+                        int[] start_rewriting_from = new int[2] { Console.CursorLeft, Console.CursorTop }; // Rewrite the current line as well (top - 1)
+
+                        for (int i = 0; i < lines.Count - cli + 1; i++)
+                        {
+                            Console.SetCursorPosition(0, Console.CursorTop + 1);
+                            Console.Write(new string(' ', Console.BufferWidth));
+                        }
+
+                        Console.SetCursorPosition(start_rewriting_from[0], start_rewriting_from[1]);
+
+                        Console.CursorLeft = 0;
+                        Console.Write(GetNoteContent(cli));
+                        Console.SetCursorPosition(c_left, c_top);
+
+                        // Save new state - pretty big change (moving the lines)
+                        states.AddState(lines, Tuple.Create(ci, cli));
+                        chars_pressed = 0;
+                    }
                 }
                 // Delete one character - Delete
                 else
@@ -820,6 +944,12 @@ public class Program
                     {
                         // Can't do this on the last line
                         if (cli == lines.Count - 1) continue;
+
+                        /***
+                         * IMPORTANT: If the line has too many characters in it, overflow
+                         * will be prevented by blocking new characters from being written
+                         ***/
+                        if (lines[cli].Count + lines[cli + 1].Count >= Console.BufferWidth - 2) continue;
 
                         // Append the next line to this one
                         lines[cli].AddRange(lines[cli + 1]);
@@ -849,21 +979,9 @@ public class Program
                         Console.Write(GetNoteContent(cli));
                         Console.SetCursorPosition(c_left, c_top);
 
-                        // Check save
-                        if (chars_pressed == 0)
-                        {
-                            chars_pressed += 2; // Deleting a line counts as 2 chars pressed
-                            if (chars_pressed >= save_every)
-                            {
-                                states.AddState(lines, Tuple.Create(ci, cli));
-                                chars_pressed = 0;
-                            }
-                        }
-                        else
-                        {
-                            // This delete simply undid a change, so chars_pressed should be decremented by 2 to even out the chars_pressed_tracker
-                            chars_pressed -= 2;
-                        }
+                        // Save new state - pretty big change (moving the lines)
+                        states.AddState(lines, Tuple.Create(ci, cli));
+                        chars_pressed = 0;
                     }
                     // If index is not at the beginning
                     else
@@ -937,7 +1055,10 @@ public class Program
                 continue;
             }
             // Add ending bracket when pressing the opening bracket [ => []
-            else if (keyinfo.Key == ConsoleKey.Oem4)
+            // And for regular parenthesis:
+            // Add ending bracket when pressing the opening bracket ( => ()
+            //                square bracket                                    regular parenthesis
+            else if (keyinfo.Key == ConsoleKey.Oem4 || (keyinfo.Key == ConsoleKey.D9 && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Shift)))
             {
                 /***
                  * IMPORTANT: If the line has too many characters in it, overflow
@@ -945,8 +1066,17 @@ public class Program
                  ***/
                 if (lines[cli].Count + 2 >= Console.BufferWidth - 2) continue;
 
-                // Insert the two brackets
-                lines[cli].InsertRange(ci, "[]");
+                /*** Insert the two brackets ***/
+
+                // Square brackets
+                if (keyinfo.Key == ConsoleKey.Oem4)
+                {
+                    lines[cli].InsertRange(ci, "[]");
+                }
+                else
+                {
+                    lines[cli].InsertRange(ci, "()");
+                }
 
                 // Rewrite line
                 int previous_loc = ci;
@@ -1095,6 +1225,34 @@ public class Program
             }
 
             after_tab_markup_check:
+
+            /***
+             * Because pressing [ will automatically add a closing bracket,
+             * If a user presses the closing bracket themselves,
+             * another bracket shouldn't be added
+             * 
+             * Instead the cursor will move one space to the right
+             * to simulate having added the bracket, despite it already being there
+             * This is something IDEs and text editors often implement
+             * 
+             * This if statements checks the same thing for regular parenthesis ()
+             * 
+             * The check in the middle is to prevent an IndexOutOfRange exception
+             ***/
+            if (
+                ci < lines[cli].Count
+                &&
+                (
+                    (keyinfo.Key == ConsoleKey.Oem6 && lines[cli][ci] == ']')
+                    ||
+                    (keyinfo.Key == ConsoleKey.D0 && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Shift) && lines[cli][ci] == ')')
+                )
+            )
+            {
+                ci++;
+                Console.CursorLeft++;
+                continue;
+            }
 
             /***
              * The easiest way to fix the tab issue
