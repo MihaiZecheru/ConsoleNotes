@@ -8,12 +8,34 @@ public class Note
 {
     private static Regex LinksRegex = new Regex(@"(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})");
 
+    /// <summary>
+    /// Used to separate notes in the notes.txt file
+    /// </summary>
     public static string NoteSeparator = "{<@SEP>}";
+
+    /// <summary>
+    /// Use to separate the title of a note from the body, with the title appearing on the left side of the separator
+    /// </summary>
     public static string TitleSeparator = "{<@TITLE>}";
+
+    /// <summary>
+    /// The string used to represent a note without a title
+    /// </summary>
     private static string EmptyTitle = "{{TITLE_EMPTY}}";
 
-    private bool NoTitle { get; set; }
+    /// <summary>
+    /// Used for checking if a note doesn't have a title
+    /// </summary>
+    private bool NoTitle;
+
+    /// <summary>
+    /// The title of the note
+    /// </summary>
     public string Title { get; set; }
+
+    /// <summary>
+    /// The content in the note
+    /// </summary>
     public string Body { get; set; }
 
     /// <summary>
