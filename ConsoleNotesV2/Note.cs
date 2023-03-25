@@ -6,6 +6,9 @@ namespace ConsoleNotes;
 
 public class Note
 {
+    /// <summary>
+    /// Regex for finding links in a string
+    /// </summary>
     private static Regex LinksRegex = new Regex(@"(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})");
 
     /// <summary>
@@ -39,6 +42,11 @@ public class Note
     public string Body { get; set; }
 
     /// <summary>
+    /// Datetime string of the time the note was created
+    /// </summary>
+    public string CreatedAt { get; }
+
+    /// <summary>
     /// For making a new note that doesn't already exist
     /// </summary>
     /// <param name="title">The title of the note</param>
@@ -48,6 +56,7 @@ public class Note
         Title = title;
         Body = body;
         NoTitle = (Title == EmptyTitle);
+        CreatedAt = DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss");
     }
 
     /// <summary>
@@ -56,31 +65,61 @@ public class Note
     /// <param name="raw_note_content">The raw text from the notes.txt file, which still includes a title separator</param>
     public Note(string raw_note_content)
     {
+        // Separate note into date, title, and body
         string[] note = raw_note_content.Split(TitleSeparator);
-        Title = note[0];
-        Body = note[1];
+        string[] titleAndDate = note[0].Split("{<@DATE>}"); // [0] = empty string, [1] = date, [2] = title
+        string body = note[1]; // Just the body
+
+        // Set attributes
+        CreatedAt = titleAndDate[1];
+        Title = titleAndDate[2];
+        Body = body;
         NoTitle = (Title == EmptyTitle);
     }
 
     /// <summary>
-    /// Turn the note into a Spectre.Console.Panel, which can be displayed to the screen with AnsiConsole.Write()
+    /// Turn the note into a <see cref="Spectre.Console.Panel"/>,
+    /// which can be displayed to the screen with <see cref="AnsiConsole.Write()"/>
     /// </summary>
-    /// <returns>A Spectre.Console.Panel to display on the console</returns>
-    /// <remarks>The panel's border will be given the next color from the ColorCycle</remarks>
-    private Spectre.Console.Panel GetAsPanel()
+    /// <remarks>
+    /// The panel's border will be given the next color from the ColorCycle
+    /// <br/><br/>
+    /// The color of the border is returned so that the <see cref="Spectre.Console.Rule"/>
+    /// which displays the Date of the note can be given the same color
+    /// </remarks>
+    /// <returns>
+    /// Item1: <see cref="Spectre.Console.Panel"/> to display on the console<br/>
+    /// Item2: The <see cref="Spectre.Console.Color"/> used for the panel's border
+    /// </returns>
+    private Tuple<Spectre.Console.Panel, Spectre.Console.Color> GetAsPanel()
     {
+        // Panel and panel header
         Panel panel = new Panel(new Markup(Body));
         if (!NoTitle) panel.Header = new PanelHeader(Title);
-        panel.BorderStyle = new Style(ColorCycle.Next());
-        return panel.Expand();
+        
+        // Border color
+        Spectre.Console.Color color = ColorCycle.Next();
+        panel.BorderStyle = new Style(color);
+
+        // Expand the panel before returning
+        return Tuple.Create(panel.Expand(), color);
     }
 
     /// <summary>
-    /// Write the note to the console
+    /// Write the note to the console inside of a <see cref="Spectre.Console.Panel"/>,
+    /// with the note's date as its header
     /// </summary>
     public void Display()
     {
-        AnsiConsole.Write(GetAsPanel());
+        (Spectre.Console.Panel noteAsPanel, Spectre.Console.Color color) = GetAsPanel();
+
+        // Header rule
+        Rule dateDisplay = new Rule(CreatedAt);
+        dateDisplay.Style = new Style(color);
+
+        // Display the note
+        AnsiConsole.Write(dateDisplay);
+        AnsiConsole.Write(noteAsPanel);
     }
 
     /// <summary>
@@ -92,7 +131,8 @@ public class Note
     /// <returns>The stringified note</returns>
     public override string ToString()
     {
-        return $"{Title}{TitleSeparator}{Body}";
+        // {<@DATE>}(.*?){<@DATE>}(.*?)<@TITLE>(.*?)
+        return $"{{<@DATE>}}{CreatedAt}{{<@DATE>}}{Title}{TitleSeparator}{Body}";
     }
 
     /// <summary>
