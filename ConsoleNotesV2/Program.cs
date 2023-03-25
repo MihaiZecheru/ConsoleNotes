@@ -87,6 +87,27 @@ public class Program
         {
             displayRange.Start++;
             displayRange.End++;
+
+            /***
+             * If the user is using Windows Terminal instead of powershell or a command prompt,
+             * a bug appears with the display text. When clearing the screen to rewrite the notes (using the new displayRange),
+             * the console still remains scrollable so that the user can scroll up and see the old range that should have been deleted.
+             * 
+             * I found this trick that works in detecting the terminal used - the Console.Title doesn't show for the Window Terminal
+             * as the title is usually set to the CD
+             ***/
+            if (Console.Title != "Console Notes")
+            {
+                try
+                {
+                    for (int i = 0; i < 1000; i++)
+                    {
+                        Console.WriteLine(new string(' ', Console.BufferWidth));
+                    }
+                }
+                catch (Exception) { }
+            }
+
             Update();
         }
         // Shift the viewing range up the screen by one (down once)
@@ -94,6 +115,27 @@ public class Program
         {
             displayRange.Start--;
             displayRange.End--;
+
+            /***
+             * If the user is using Windows Terminal instead of powershell or a command prompt,
+             * a bug appears with the display text. When clearing the screen to rewrite the notes (using the new displayRange),
+             * the console still remains scrollable so that the user can scroll up and see the old range that should have been deleted.
+             * 
+             * I found this trick that works in detecting the terminal used - the Console.Title doesn't show for the Window Terminal
+             * as the title is usually set to the CD
+             ***/
+            if (Console.Title != "Console Notes")
+            {
+                try
+                {
+                    for (int i = 0; i < 1000; i++)
+                    {
+                        Console.WriteLine(new string(' ', Console.BufferWidth));
+                    }
+                }
+                catch (Exception) { }
+            }
+
             Update();
             Console.SetCursorPosition(0, 0);
         }
