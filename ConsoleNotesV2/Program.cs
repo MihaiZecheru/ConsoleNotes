@@ -1,4 +1,5 @@
 ﻿using Spectre.Console;
+using System.Security.Cryptography.X509Certificates;
 using System.Text.RegularExpressions;
 
 namespace ConsoleNotes;
@@ -209,6 +210,10 @@ public class Program
         // Keep track of changes made to the note
         CtrlZ states = new CtrlZ();
 
+        // Save the state every 4 characters
+        int save_every = 4;
+        int chars_pressed = 0;
+
         // Loop for getting user input
         while (true)
         {
@@ -225,13 +230,15 @@ public class Program
             else if (keyinfo.Key == ConsoleKey.Z && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control))
             {
                 // Get previous state
-                (lines, (int left, int top)) = states.Undo();
+                (lines, (ci, cli)) = states.Undo();
+                //lines = _lines;
+                //ci = _ci;
+                //cli = _cli;
 
                 /*** Rewrite screen ***/
 
-                // Clear
+                // Clear - cursor will automatically be brought to (0, 0)
                 Console.Clear();
-                Console.SetCursorPosition(0, 0);
 
                 // Rewrite the horizontal rule
                 var rule = new Spectre.Console.Rule("[deeppink3]Write A New Note[/]");
@@ -241,28 +248,24 @@ public class Program
                 // Rewrite the note
                 for (int i = 0; i < lines.Count; i++)
                 {
-                    for (int j = 0; j < lines[i].Count; j++)
-                    {
-                        Console.WriteLine(lines[i][j]);
-                    }
+                    Console.WriteLine(lines[i].ToArray());
                 }
 
                 // Move cursor to the correct position
-                ci = left;
-                cli = top;
-                Console.SetCursorPosition(left, top);
+                Console.SetCursorPosition(ci, cli + 1); // Account for horizontal rule with top + 1
+
+                continue;
             }
             // Redo - Ctrl+Y
             else if (keyinfo.Key == ConsoleKey.Y && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control))
             {
                 // Get following state
-                (lines, (int left, int top)) = states.Redo();
+                (lines, (ci, cli)) = states.Redo();
 
                 /*** Rewrite screen ***/
 
-                // Clear
+                // Clear - cursor will automatically be brought to (0, 0)
                 Console.Clear();
-                Console.SetCursorPosition(0, 0);
 
                 // Rewrite the horizontal rule
                 var rule = new Spectre.Console.Rule("[deeppink3]Write A New Note[/]");
@@ -272,16 +275,13 @@ public class Program
                 // Rewrite the note
                 for (int i = 0; i < lines.Count; i++)
                 {
-                    for (int j = 0; j < lines[i].Count; j++)
-                    {
-                        Console.WriteLine(lines[i][j]);
-                    }
+                    Console.WriteLine(lines[i].ToArray());
                 }
 
                 // Move cursor to the correct position
-                ci = left;
-                cli = top;
-                Console.SetCursorPosition(left, top);
+                Console.SetCursorPosition(ci, cli + 1); // Account for horizontal rule with top + 1
+
+                continue;
             }
             // Create new line - Enter
             else if (keyinfo.Key == ConsoleKey.Enter)
@@ -305,6 +305,14 @@ public class Program
                 // Move the cursor down to the next line anyway
                 cli++;
                 ci = 0;
+                
+                // Check save
+                chars_pressed += 2; // Enter counts as 2 chars pressed
+                if (chars_pressed >= save_every)
+                {
+                    states.AddState(lines, Tuple.Create(ci, cli));
+                    chars_pressed = 0;
+                }
 
                 // Move to next line
                 Console.SetCursorPosition(0, Console.CursorTop + 1);
@@ -473,6 +481,14 @@ public class Program
                         {
                             // Create a new line
                             lines.Add(new List<char>());
+
+                            // Check save
+                            chars_pressed += 2; // Making a new line counts as 2 chars pressed
+                            if (chars_pressed >= save_every)
+                            {
+                                states.AddState(lines, Tuple.Create(ci, cli));
+                                chars_pressed = 0;
+                            }
                         }
 
                         // Move to the next line
@@ -506,6 +522,14 @@ public class Program
                         {
                             // Create a new line
                             lines.Add(new List<char>());
+
+                            // Check save
+                            chars_pressed += 2; // Making a new line counts as 2 chars pressed
+                            if (chars_pressed >= save_every)
+                            {
+                                states.AddState(lines, Tuple.Create(ci, cli));
+                                chars_pressed = 0;
+                            }
                         }
 
                         // Move to the next line
@@ -533,6 +557,14 @@ public class Program
                 {
                     // Create a new line
                     lines.Add(new List<char>());
+
+                    // Check save
+                    chars_pressed += 2; // Making a new line counts as 2 chars pressed
+                    if (chars_pressed >= save_every)
+                    {
+                        states.AddState(lines, Tuple.Create(ci, cli));
+                        chars_pressed = 0;
+                    }
                 }
 
                 // Move to the next line
@@ -604,6 +636,10 @@ public class Program
                             Console.CursorLeft = 0;
                             ci = 0;
                         }
+
+                        // Save new state - an entire word was deleted
+                        states.AddState(lines, Tuple.Create(ci, cli));
+                        chars_pressed = 0;
                     }
                 }
                 // Delete one character - Backspace
@@ -628,6 +664,22 @@ public class Program
                             Console.CursorLeft = 0;
                             Console.Write(new string(lines[cli].ToArray()) + "  ");
                             Console.CursorLeft = previous_cursor_pos - 1;
+
+                            // Check save
+                            if (chars_pressed == 0)
+                            {
+                                chars_pressed += 2; // Two chars were changed
+                                if (chars_pressed >= save_every)
+                                {
+                                    states.AddState(lines, Tuple.Create(ci, cli));
+                                    chars_pressed = 0;
+                                }
+                            }
+                            else
+                            {
+                                // This delete simply undid a change, so chars_pressed should be decremented by 2 to even out the chars_pressed_tracker
+                                chars_pressed -= 2; // Two chars were changed
+                            }
                         }
                         else
                         {
@@ -638,6 +690,22 @@ public class Program
                             Console.CursorLeft = 0;
                             Console.Write(new string(lines[cli].ToArray()) + " ");
                             Console.CursorLeft = previous_cursor_pos - 1;
+
+                            // Check save
+                            if (chars_pressed == 0)
+                            {
+                                chars_pressed++;
+                                if (chars_pressed >= save_every)
+                                {
+                                    states.AddState(lines, Tuple.Create(ci, cli));
+                                    chars_pressed = 0;
+                                }
+                            }
+                            else
+                            {
+                                // This delete simply undid a change, so chars_pressed should be decremented to even out the chars_pressed_tracker
+                                chars_pressed--;
+                            }
                         }
                     }
                     // Index is at the beginning, so the current line must be moved forward (up the screen) by one
@@ -655,8 +723,24 @@ public class Program
                         // Delete the line
                         lines.RemoveAt(cli--);
 
+                        // Check save
+                        if (chars_pressed == 0)
+                        {
+                            chars_pressed += 2; // Deleting a line counts as 2 chars pressed
+                            if (chars_pressed >= save_every)
+                            {
+                                states.AddState(lines, Tuple.Create(ci, cli));
+                                chars_pressed = 0;
+                            }
+                        }
+                        else
+                        {
+                            // This delete simply undid a change, so chars_pressed should be decremented by 2 to even out the chars_pressed_tracker
+                            chars_pressed -= 2;
+                        }
+
                         /*** Update the screen ***/
-                        
+
                         // Remember the position to go to
                         int cursor_pos = Console.CursorTop - 1;
                         ci = prev_line_length;
@@ -722,6 +806,10 @@ public class Program
                             Console.Write(new string(lines[cli].GetRange(ci, lines[cli].Count - ci).ToArray()) + new string(' ', range.Count));
                             Console.CursorLeft = previous_cursor_pos;
                         }
+
+                        // Save new state - an entire word was deleted
+                        states.AddState(lines, Tuple.Create(ci, cli));
+                        chars_pressed = 0;
                     }
                 }
                 // Delete one character - Delete
@@ -760,6 +848,22 @@ public class Program
                         Console.CursorLeft = 0;
                         Console.Write(GetNoteContent(cli));
                         Console.SetCursorPosition(c_left, c_top);
+
+                        // Check save
+                        if (chars_pressed == 0)
+                        {
+                            chars_pressed += 2; // Deleting a line counts as 2 chars pressed
+                            if (chars_pressed >= save_every)
+                            {
+                                states.AddState(lines, Tuple.Create(ci, cli));
+                                chars_pressed = 0;
+                            }
+                        }
+                        else
+                        {
+                            // This delete simply undid a change, so chars_pressed should be decremented by 2 to even out the chars_pressed_tracker
+                            chars_pressed -= 2;
+                        }
                     }
                     // If index is not at the beginning
                     else
@@ -785,6 +889,22 @@ public class Program
                         Console.CursorLeft = 0;
                         Console.Write(new string(lines[cli].ToArray()) + " ");
                         Console.CursorLeft = previous_cursor_pos; // Cursor doesn't move
+
+                        // Check save
+                        if (chars_pressed == 0)
+                        {
+                            chars_pressed++;
+                            if (chars_pressed >= save_every)
+                            {
+                                states.AddState(lines, Tuple.Create(ci, cli));
+                                chars_pressed = 0;
+                            }
+                        }
+                        else
+                        {
+                            // This delete simply undid a change, so chars_pressed should be decremented to even out the chars_pressed_tracker
+                            chars_pressed--;
+                        }
                     }
                 }
 
@@ -810,6 +930,10 @@ public class Program
                 Console.CursorLeft = previous_loc + 3;
                 ci = previous_loc + 3;
 
+                // Save new state - a chunk of chars was added
+                states.AddState(lines, Tuple.Create(ci, cli));
+                chars_pressed = 0;
+
                 continue;
             }
             // Add ending bracket when pressing the opening bracket [ => []
@@ -831,6 +955,14 @@ public class Program
                 // Move cursor to inside the brackets
                 Console.CursorLeft = previous_loc + 1;
                 ci = previous_loc + 1;
+
+                // Check save
+                chars_pressed += 2; // Two chars were added
+                if (chars_pressed >= save_every)
+                {
+                    states.AddState(lines, Tuple.Create(ci, cli));
+                    chars_pressed = 0;
+                }
 
                 continue;
             }
@@ -902,10 +1034,15 @@ public class Program
 
                 Console.CursorLeft = loc;
                 ci = loc;
+
+                // Save new state - a chunk of chars was added
+                states.AddState(lines, Tuple.Create(ci, cli));
+                chars_pressed = 0;
                 continue;
             }
             // Skip if the pressed key will **NOT** output an alphanumeric character
             else if (
+                 // This check for LeftWindows etc. is because these few obscure keys are inbetween the range of 48 - 111, so they are not excluded by the first two checks of < 48 & > 111
                  ((int)keyinfo.Key < 48 || (int)keyinfo.Key > 111 || keyinfo.Key == ConsoleKey.LeftWindows || keyinfo.Key == ConsoleKey.RightWindows || keyinfo.Key == ConsoleKey.Applications || keyinfo.Key == ConsoleKey.Sleep)
                  && keyinfo.Key != ConsoleKey.Spacebar && keyinfo.Key != ConsoleKey.Tab
                  /* OEM keys */
@@ -1005,6 +1142,14 @@ public class Program
                 Console.CursorLeft = 0;
                 Console.Write(lines[cli].ToArray());
                 Console.CursorLeft = previous_cursor_pos + chars_to_add.Count;
+            }
+
+            // Check save
+            chars_pressed++; // TAB will only count as one change despite adding 4 spaces
+            if (chars_pressed >= save_every)
+            {
+                states.AddState(lines, Tuple.Create(ci, cli));
+                chars_pressed = 0;
             }
         }
 
