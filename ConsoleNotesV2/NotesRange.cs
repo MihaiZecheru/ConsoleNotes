@@ -2,8 +2,8 @@
 
 internal struct NotesRange
 {
-    public int Start;
-    public int End;
+    public int Start { get; set; }
+    public int End { get; set; }
 
     public NotesRange(int start, int end)
     {
