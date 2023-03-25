@@ -192,6 +192,7 @@ public class Program
         // Current index in 'note[cli]'
         int ci = 0;
 
+        // Function for concatenating a note
         Func<int, string> GetNoteContent = (int start) =>
         {
             string s = string.Empty;
@@ -205,7 +206,10 @@ public class Program
             return s.Trim();
         };
 
+        // Keep track of changes made to the note
+        CtrlZ states = new CtrlZ();
 
+        // Loop for getting user input
         while (true)
         {
             ConsoleKeyInfo keyinfo = Console.ReadKey(true);
@@ -213,8 +217,71 @@ public class Program
             // Create then save the note - Ctrl+S
             if (keyinfo.Key == ConsoleKey.S && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control))
             {
+                // TODO: exceptions & popup if markuop doesnt compile
                 if (GetNoteContent(0).Length > 0) break;
                 else continue;
+            }
+            // Undo - Ctrl+Z
+            else if (keyinfo.Key == ConsoleKey.Z && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control))
+            {
+                // Get previous state
+                (lines, (int left, int top)) = states.Undo();
+
+                /*** Rewrite screen ***/
+
+                // Clear
+                Console.Clear();
+                Console.SetCursorPosition(0, 0);
+
+                // Rewrite the horizontal rule
+                var rule = new Spectre.Console.Rule("[deeppink3]Write A New Note[/]");
+                rule.Style = new Style(Color.Yellow);
+                AnsiConsole.Write(rule);
+
+                // Rewrite the note
+                for (int i = 0; i < lines.Count; i++)
+                {
+                    for (int j = 0; j < lines[i].Count; j++)
+                    {
+                        Console.WriteLine(lines[i][j]);
+                    }
+                }
+
+                // Move cursor to the correct position
+                ci = left;
+                cli = top;
+                Console.SetCursorPosition(left, top);
+            }
+            // Redo - Ctrl+Y
+            else if (keyinfo.Key == ConsoleKey.Y && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control))
+            {
+                // Get following state
+                (lines, (int left, int top)) = states.Redo();
+
+                /*** Rewrite screen ***/
+
+                // Clear
+                Console.Clear();
+                Console.SetCursorPosition(0, 0);
+
+                // Rewrite the horizontal rule
+                var rule = new Spectre.Console.Rule("[deeppink3]Write A New Note[/]");
+                rule.Style = new Style(Color.Yellow);
+                AnsiConsole.Write(rule);
+
+                // Rewrite the note
+                for (int i = 0; i < lines.Count; i++)
+                {
+                    for (int j = 0; j < lines[i].Count; j++)
+                    {
+                        Console.WriteLine(lines[i][j]);
+                    }
+                }
+
+                // Move cursor to the correct position
+                ci = left;
+                cli = top;
+                Console.SetCursorPosition(left, top);
             }
             // Create new line - Enter
             else if (keyinfo.Key == ConsoleKey.Enter)
@@ -318,6 +385,18 @@ public class Program
                             ci = 0;
                         }
                     }
+                    // If index **is** at the beginning
+                    // Move to the end of the previous line
+                    else
+                    {
+                        // No previous line if on the first line
+                        if (cli == 0) continue;
+
+                        int end_of_line = lines[--cli].Count;
+                        Console.CursorLeft = end_of_line;
+                        ci = end_of_line;
+                        Console.CursorTop--;
+                    }
                 }
                 // Move cursor left once - LeftArrow
                 else
@@ -347,7 +426,7 @@ public class Program
                 // Move cursor right one word - Ctrl+RightArrow
                 if (keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control))
                 {
-                    // If not at the end of the text
+                    // If not at the end of the line
                     if (ci != lines[cli].Count)
                     {
                         // If the current char and first char of the range is a space, skip it in the calculations
@@ -377,6 +456,30 @@ public class Program
                             ci = lines[cli].Count;
                         }
                     }
+                    // If index **is** at the end of the line
+                    // Move to the end of the previous line
+                    else
+                    {
+                        /***
+                         * IMPORTANT: if the cursor is at the bottom of the screen
+                         * do not allow any text to be written
+                         * 
+                         * The user must expand their console to write more
+                         ***/
+                        if (cli == Console.BufferHeight - 3) continue;
+
+                        // Move to next line if it exists or make a new one
+                        if (cli == lines.Count - 1)
+                        {
+                            // Create a new line
+                            lines.Add(new List<char>());
+                        }
+
+                        // Move to the next line
+                        ci = 0;
+                        cli++;
+                        Console.SetCursorPosition(0, Console.CursorTop + 1);
+                    }
                 }
                 // Move cursor right once - RightArrow
                 else
@@ -399,7 +502,7 @@ public class Program
                         if (cli == Console.BufferHeight - 3) continue;
 
                         // Move to next line if it exists or make a new one
-                        if (cli + 1 == lines.Count)
+                        if (cli == lines.Count - 1)
                         {
                             // Create a new line
                             lines.Add(new List<char>());
@@ -509,13 +612,33 @@ public class Program
                     // If index is not at the beginning
                     if (ci > 0)
                     {
-                        lines[cli].RemoveAt(--ci);
+                        // If the char to be deleted **is** an opening square bracket [
+                        // And the char after **is** a closing bracket ]
+                        // Meaning if the cursor is between the brackets [], delete both
+                        if (lines[cli][ci - 1] == '[' && lines[cli][ci] == ']')
+                        {
+                            /** Delete both square brackets **/
 
-                        // Rewrite line without char
-                        int previous_cursor_pos = Console.CursorLeft;
-                        Console.CursorLeft = 0;
-                        Console.Write(new string(lines[cli].ToArray()) + " ");
-                        Console.CursorLeft = previous_cursor_pos - 1;
+                            // Remove both chars
+                            lines[cli].RemoveAt(ci); // Remove closing bracket ]
+                            lines[cli].RemoveAt(--ci); // Remove opening bracket [
+
+                            // Rewrite line without chars
+                            int previous_cursor_pos = Console.CursorLeft;
+                            Console.CursorLeft = 0;
+                            Console.Write(new string(lines[cli].ToArray()) + "  ");
+                            Console.CursorLeft = previous_cursor_pos - 1;
+                        }
+                        else
+                        {
+                            lines[cli].RemoveAt(--ci);
+
+                            // Rewrite line without char
+                            int previous_cursor_pos = Console.CursorLeft;
+                            Console.CursorLeft = 0;
+                            Console.Write(new string(lines[cli].ToArray()) + " ");
+                            Console.CursorLeft = previous_cursor_pos - 1;
+                        }
                     }
                     // Index is at the beginning, so the current line must be moved forward (up the screen) by one
                     else
@@ -667,6 +790,50 @@ public class Program
 
                 continue;
             }
+            // Add closing markup tag [/] - Ctrl+/
+            else if (keyinfo.Key == ConsoleKey.Oem2 && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control))
+            {
+                /***
+                 * IMPORTANT: If the line has too many characters in it, overflow
+                 * will be prevented by blocking new characters from being written
+                 ***/
+                if (lines[cli].Count + 3 >= Console.BufferWidth - 2) continue;
+
+                // Insert the closing tag
+                lines[cli].InsertRange(ci, "[/]");
+
+                // Rewrite line
+                int previous_loc = ci;
+                Console.Write(lines[cli].GetRange(ci, lines[cli].Count - ci).ToArray());
+
+                // Move cursor
+                Console.CursorLeft = previous_loc + 3;
+                ci = previous_loc + 3;
+
+                continue;
+            }
+            // Add ending bracket when pressing the opening bracket [ => []
+            else if (keyinfo.Key == ConsoleKey.Oem4)
+            {
+                /***
+                 * IMPORTANT: If the line has too many characters in it, overflow
+                 * will be prevented by blocking new characters from being written
+                 ***/
+                if (lines[cli].Count + 2 >= Console.BufferWidth - 2) continue;
+
+                // Insert the two brackets
+                lines[cli].InsertRange(ci, "[]");
+
+                // Rewrite line
+                int previous_loc = ci;
+                Console.Write(lines[cli].GetRange(ci, lines[cli].Count - ci).ToArray());
+
+                // Move cursor to inside the brackets
+                Console.CursorLeft = previous_loc + 1;
+                ci = previous_loc + 1;
+
+                continue;
+            }
             /***
              * Markup keybinds
              ***/
@@ -681,7 +848,6 @@ public class Program
                  * between 0 - 9, which he can map to a specific hex
                  * on his own by going to the settings via Alt+S
                  ***/
-
                 List<char> _chars_to_add = new List<char>();
 
                 switch (keyinfo.Key)
@@ -711,6 +877,8 @@ public class Program
                     case ConsoleKey.D:
                         _chars_to_add.AddRange("[dim][/]");
                         break;
+                    // No special keybind preseed
+                    default: continue;
                 }
 
                 /***
@@ -736,7 +904,7 @@ public class Program
                 ci = loc;
                 continue;
             }
-            // Skip if the pressed key will not output an alphanumeric character
+            // Skip if the pressed key will **NOT** output an alphanumeric character
             else if (
                  ((int)keyinfo.Key < 48 || (int)keyinfo.Key > 111 || keyinfo.Key == ConsoleKey.LeftWindows || keyinfo.Key == ConsoleKey.RightWindows || keyinfo.Key == ConsoleKey.Applications || keyinfo.Key == ConsoleKey.Sleep)
                  && keyinfo.Key != ConsoleKey.Spacebar && keyinfo.Key != ConsoleKey.Tab
