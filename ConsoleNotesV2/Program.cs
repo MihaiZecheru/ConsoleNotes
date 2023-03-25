@@ -42,8 +42,17 @@ public class Program
             raw_notes.RemoveAt(raw_notes.Count - 1);
         Notes = raw_notes.Select(n => new Note(n)).ToList();
 
-        /* Show most recent notes */
-        displayRange = new NotesRange((Notes.Count - (displayRangeCount + 1) > 0) ? Notes.Count - (displayRangeCount + 1) : 0, Notes.Count - 1);
+        /* Show notes */
+            displayRange = new NotesRange((Notes.Count - (displayRangeCount + 1) > 0) ? Notes.Count - (displayRangeCount + 1) : 0, Notes.Count - 1);
+        //if (NotesOrderNewestFirst)
+        //{
+        //    // If there are more notes than the display range count, start the display range at the index of the last note minus the display range count
+        //}
+        //else
+        //{
+        //    // If there are more notes than the display range count, end the display range at the index of the last note minus the display range count
+        //    displayRange = new NotesRange(0, (Notes.Count - (displayRangeCount + 1) > 0) ? Notes.Count - (displayRangeCount + 1) : 0);
+        //}
 
         /* Wait to continue */
         Console.ReadKey(true);
@@ -83,25 +92,62 @@ public class Program
         ConsoleKey key = keyinfo.Key;
 
         // Shift the viewing range down the screen by one (up once)
-        if (key == ConsoleKey.DownArrow && displayRange.End != Notes.Count - 1 && mode == Mode.ViewNotes)
+        if (key == ConsoleKey.DownArrow && mode == Mode.ViewNotes)
         {
-            displayRange.Start++;
-            displayRange.End++;
-            Update();
+            bool change_made = false;
+            if (NotesOrderNewestFirst)
+            {
+                if (displayRange.End != Notes.Count - 1)
+                {
+                    displayRange.Start++;
+                    displayRange.End++;
+                    change_made = true;
+                }
+            }
+            else
+            {
+                if (displayRange.Start != 0)
+                {
+                    displayRange.Start--;
+                    displayRange.End--;
+                    change_made = true;
+                }
+            }
+
+            if (change_made) Update();
         }
         // Shift the viewing range up the screen by one (down once)
-        else if (key == ConsoleKey.UpArrow && displayRange.Start != 0 && mode == Mode.ViewNotes)
+        else if (key == ConsoleKey.UpArrow && mode == Mode.ViewNotes)
         {
-            displayRange.Start--;
-            displayRange.End--;
-            Update();
-            Console.SetCursorPosition(0, 0);
+            bool change_made = false;
+            if (NotesOrderNewestFirst)
+            {
+                if (displayRange.Start != 0)
+                {
+                    displayRange.Start--;
+                    displayRange.End--;
+                    change_made = true;
+                }
+            }
+            else
+            {
+                if (displayRange.End != Notes.Count - 1)
+                {
+                    displayRange.Start++;
+                    displayRange.End++;
+                    change_made = true;
+                }
+            }
+            
+            if (change_made)
+            {
+                Update();
+                Console.SetCursorPosition(0, 0);
+            }
         }
         // Reverse the order the notes are displayed in - oldest first or newest first
         else if (key == ConsoleKey.R && mode == Mode.ViewNotes)
         {
-            // TODO - this func
-            // TODO: also go around and anywhere a new NoteRange is made, use an if statement to check NotesOrderNewestFirst and make the range accordingly
             if (NotesOrderNewestFirst)
             {
                 NotesOrderNewestFirst = false;
@@ -110,6 +156,8 @@ public class Program
             {
                 NotesOrderNewestFirst = true;
             }
+
+            Update();
         }
         // Switch to view mode
         else if (key == ConsoleKey.V)
@@ -131,6 +179,11 @@ public class Program
         {
             UpdateMode(Mode.DeleteNote);
         }
+        // Switch to Help mode (open the help menu)
+        else if (key == ConsoleKey.H)
+        {
+            UpdateMode(Mode.Help);
+        }
         // Move view range to the very top (home, beginning of the list, index 0)
         else if (key == ConsoleKey.W)
         {
@@ -144,11 +197,6 @@ public class Program
             displayRange = new NotesRange((Notes.Count - (displayRangeCount + 1) > 0) ? Notes.Count - (displayRangeCount + 1) : 0, Notes.Count - 1);
             Update();
         }
-        // Switch to Help mode (open the help menu)
-        else if (key == ConsoleKey.H)
-        {
-            UpdateMode(Mode.Help);
-        }
     };
 
     public static void Update()
@@ -160,6 +208,21 @@ public class Program
             // Hide cursor
             Console.CursorVisible = false;
 
+            /***
+             * If the user is using Windows Terminal instead of powershell or a command prompt,
+             * a bug appears with the display text. When clearing the screen to rewrite the notes (using the new displayRange),
+             * the console still remains scrollable so that the user can scroll up and see the old range that should have been deleted.
+             * 
+             * I found this trick that works in detecting the terminal used - the Console.Title doesn't show for the Window Terminal
+             * as the title is usually set to the CD
+             ***/
+            if (Console.Title != "Console Notes")
+            {
+                // This character will clear the scroll of the terminal
+                Console.Write("\x1b[3J");
+                Console.SetCursorPosition(0, 0);
+            }
+
             if (Notes.Count == 0)
             {
                 AnsiConsole.MarkupLine("[yellow]You have no notes. Press [deeppink3]N[/] to create a new note or [deeppink3]H[/] to view the help menu[/]");
@@ -168,6 +231,10 @@ public class Program
 
             // In any given range (s - e), the range starts at s and ends at s + count. count = (e - s + 1)
             List<Note> notes = Notes.GetRange(displayRange.Start, displayRange.End - displayRange.Start + 1);
+            if (!NotesOrderNewestFirst)
+            {
+                notes.Reverse();
+            }
 
             for (int i = 0; i < notes.Count; i++)
             {
