@@ -4,8 +4,8 @@ public delegate void KeyEventHandler(ConsoleKeyInfo keyinfo);
 
 internal class KeyEvents
 {
-    private KeyEventHandler func;
-    private List<ConsoleKey> TriggerKeys;
+    private readonly KeyEventHandler func;
+    private readonly List<ConsoleKey> TriggerKeys;
 
     public KeyEvents(KeyEventHandler func, List<ConsoleKey> triggerKeys)
     {
