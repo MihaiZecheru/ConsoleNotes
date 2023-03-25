@@ -154,7 +154,6 @@ public class Program
     public static void Update()
     {
         Console.Clear();
-        Console.SetCursorPosition(0, 0);
 
         if (mode == Mode.ViewNotes)
         {
