@@ -51,7 +51,7 @@ internal static class ColorCycle
     /// Cycle the colors once and get the new color
     /// </summary>
     /// <returns>The next color in the cycle</returns>
-    public static Spectre.Console.Color CycleNext()
+    public static Spectre.Console.Color Next()
     {
         if (Index == ColorsCount - 1) Index = 0;
         return Cycle[Index++];
