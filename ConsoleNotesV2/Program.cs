@@ -160,6 +160,12 @@ public class Program
             // Hide cursor
             Console.CursorVisible = false;
 
+            if (Notes.Count == 0)
+            {
+                AnsiConsole.MarkupLine("[yellow]You have no notes. Press [deeppink3]N[/] to create a new note or [deeppink3]H[/] to view the help menu[/]");
+                return;
+            }
+
             // In any given range (s - e), the range starts at s and ends at s + count. count = (e - s + 1)
             List<Note> notes = Notes.GetRange(displayRange.Start, displayRange.End - displayRange.Start + 1);
 
