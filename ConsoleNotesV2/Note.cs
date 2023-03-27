@@ -128,10 +128,18 @@ public class Note
         }
         
         if (!NoTitle) panel.Header = new PanelHeader(Title);
-        
-        // Border color
-        Spectre.Console.Color color = ColorCycle.Next();
-        panel.BorderStyle = new Style(color);
+
+        // Add ColorCycle border color only if user has rainbow notes enabled
+        Spectre.Console.Color color;
+        if (Program.Settings.ShowRainbowNotes)
+        {
+            color = ColorCycle.Next();
+            panel.BorderStyle = new Style(color);
+        }
+        else
+        {
+            color = Spectre.Console.Color.Default;
+        }
 
         // Expand the panel before returning
         return Tuple.Create(panel.Expand(), color);
