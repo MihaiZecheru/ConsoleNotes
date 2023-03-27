@@ -12,16 +12,16 @@ public class UserSettings
     private bool showRainbowNotes;
     private bool notesDisplayOrder_NewestFirst;
     private bool createBackups;
-    private Color color1;
-    private Color color2;
-    private Color color3;
-    private Color color4;
-    private Color color5;
-    private Color color6;
-    private Color color7;
-    private Color color8;
-    private Color color9;
-    private Color color0;
+    private string color1;
+    private string color2;
+    private string color3;
+    private string color4;
+    private string color5;
+    private string color6;
+    private string color7;
+    private string color8;
+    private string color9;
+    private string color0;
 
     public bool ShowRainbowNotes {
         get => showRainbowNotes;
@@ -46,7 +46,7 @@ public class UserSettings
             SaveSettings();
         }
     }
-    public Color Color1
+    public string Color1
     {
         get => color1;
         set {
@@ -54,7 +54,7 @@ public class UserSettings
             SaveSettings();
         }
     }
-    public Color Color2
+    public string Color2
     {
         get => color2;
         set {
@@ -62,7 +62,7 @@ public class UserSettings
             SaveSettings();
         }
     }
-    public Color Color3
+    public string Color3
     {
         get => color3;
         set {
@@ -70,7 +70,7 @@ public class UserSettings
             SaveSettings();
         }
     }
-    public Color Color4
+    public string Color4
     {
         get => color4;
         set {
@@ -78,7 +78,7 @@ public class UserSettings
             SaveSettings();
         }
     }
-    public Color Color5
+    public string Color5
     {
         get => color5;
         set {
@@ -86,7 +86,7 @@ public class UserSettings
             SaveSettings();
         }
     }
-    public Color Color6
+    public string Color6
     {
         get => color6;
         set {
@@ -94,7 +94,7 @@ public class UserSettings
             SaveSettings();
         }
     }
-    public Color Color7
+    public string Color7
     {
         get => color7;
         set {
@@ -102,7 +102,7 @@ public class UserSettings
             SaveSettings();
         }
     }
-    public Color Color8
+    public string Color8
     {
         get => color8;
         set {
@@ -110,7 +110,7 @@ public class UserSettings
             SaveSettings();
         }
     }
-    public Color Color9
+    public string Color9
     {
         get => color9;
         set {
@@ -118,7 +118,7 @@ public class UserSettings
             SaveSettings();
         }
     }
-    public Color Color0
+    public string Color0
     {
         get => color0;
         set {
@@ -143,39 +143,18 @@ public class UserSettings
             NotesDisplayOrder_NewestFirst = Convert.ToBoolean(lines[1].Split('=')[1]);
             CreateBackups = Convert.ToBoolean(lines[2].Split('=')[1]);
 
-            // Each color looks like this in the file: Color{i}=r-g-b
-            // lines[i].Split('=') gets the r-g-b, then .Split('-') separates the r, g, & b
+            // Each color looks like this in the file: Color{i}=hex
 
-            string[] rgb;
-            rgb = lines[3].Split('=')[1].Split('-');
-            Color1 = new Color(Convert.ToByte(rgb[0]), Convert.ToByte(rgb[1]), Convert.ToByte(rgb[2]));
-
-            rgb = lines[4].Split('=')[1].Split('-');
-            Color2 = new Color(Convert.ToByte(rgb[0]), Convert.ToByte(rgb[1]), Convert.ToByte(rgb[2]));
-
-            rgb = lines[5].Split('=')[1].Split('-');
-            Color3 = new Color(Convert.ToByte(rgb[0]), Convert.ToByte(rgb[1]), Convert.ToByte(rgb[2]));
-
-            rgb = lines[6].Split('=')[1].Split('-');
-            Color4 = new Color(Convert.ToByte(rgb[0]), Convert.ToByte(rgb[1]), Convert.ToByte(rgb[2]));
-
-            rgb = lines[7].Split('=')[1].Split('-');
-            Color5 = new Color(Convert.ToByte(rgb[0]), Convert.ToByte(rgb[1]), Convert.ToByte(rgb[2]));
-
-            rgb = lines[8].Split('=')[1].Split('-');
-            Color6 = new Color(Convert.ToByte(rgb[0]), Convert.ToByte(rgb[1]), Convert.ToByte(rgb[2]));
-
-            rgb = lines[9].Split('=')[1].Split('-');
-            Color7 = new Color(Convert.ToByte(rgb[0]), Convert.ToByte(rgb[1]), Convert.ToByte(rgb[2]));
-
-            rgb = lines[10].Split('=')[1].Split('-');
-            Color8 = new Color(Convert.ToByte(rgb[0]), Convert.ToByte(rgb[1]), Convert.ToByte(rgb[2]));
-
-            rgb = lines[11].Split('=')[1].Split('-');
-            Color9 = new Color(Convert.ToByte(rgb[0]), Convert.ToByte(rgb[1]), Convert.ToByte(rgb[2]));
-
-            rgb = lines[12].Split('=')[1].Split('-');
-            Color0 = new Color(Convert.ToByte(rgb[0]), Convert.ToByte(rgb[1]), Convert.ToByte(rgb[2]));
+            Color1 = lines[3].Split('=')[1];
+            Color2 = lines[4].Split('=')[1];
+            Color3 = lines[5].Split('=')[1];
+            Color4 = lines[6].Split('=')[1];
+            Color5 = lines[7].Split('=')[1];
+            Color6 = lines[8].Split('=')[1];
+            Color7 = lines[9].Split('=')[1];
+            Color8 = lines[10].Split('=')[1];
+            Color9 = lines[11].Split('=')[1];
+            Color0 = lines[12].Split('=')[1];
         }
         else
         {
@@ -190,16 +169,16 @@ public class UserSettings
         return $"ShowRainbowNotes={ShowRainbowNotes}\n" +
                $"NotesDisplayOrder_OldestFirst={NotesDisplayOrder_NewestFirst}\n" +
                $"CreateBackups={CreateBackups}\n" +
-               $"Color1={Color1.R}-{Color1.G}-{Color1.B}\n" +
-               $"Color2={Color2.R}-{Color2.G}-{Color2.B}\n" +
-               $"Color3={Color3.R}-{Color3.G}-{Color3.B}\n" +
-               $"Color4={Color4.R}-{Color4.G}-{Color4.B}\n" +
-               $"Color5={Color5.R}-{Color5.G}-{Color5.B}\n" +
-               $"Color6={Color6.R}-{Color6.G}-{Color6.B}\n" +
-               $"Color7={Color7.R}-{Color7.G}-{Color7.B}\n" +
-               $"Color8={Color8.R}-{Color8.G}-{Color8.B}\n" +
-               $"Color9={Color9.R}-{Color9.G}-{Color9.B}\n" +
-               $"Color0={Color0.R}-{Color0.G}-{Color0.B}";
+               $"Color1={Color1}\n" +
+               $"Color2={Color2}\n" +
+               $"Color3={Color3}\n" +
+               $"Color4={Color4}\n" +
+               $"Color5={Color5}\n" +
+               $"Color6={Color6}\n" +
+               $"Color7={Color7}\n" +
+               $"Color8={Color8}\n" +
+               $"Color9={Color9}\n" +
+               $"Color0={Color0}";
     }
 
     public void SaveSettings()
