@@ -3,6 +3,7 @@ using System.Text.RegularExpressions;
 using System.Runtime.InteropServices;
 using Spectre.Console.Json;
 using System.Diagnostics;
+using System.Reflection;
 
 namespace ConsoleNotes;
 
@@ -51,7 +52,7 @@ public class Program
 
         /* Show notes */
         displayRange = new NotesRange((Notes.Count - (displayRangeCount + 1) > 0) ? Notes.Count - (displayRangeCount + 1) : 0, Notes.Count - 1);
-        NotesOrderNewestFirst = Settings.NotesDisplayOrder_OldestFirst;
+        NotesOrderNewestFirst = Settings.NotesDisplayOrder_NewestFirst;
 
         /* Wait to continue */
         Console.ReadKey(true);
@@ -63,25 +64,38 @@ public class Program
         new KeyEvents(AllKeysEventHandler, new List<ConsoleKey> {
             // Move view range down once (up the list)
             ConsoleKey.DownArrow,
+            
             // Move view range up once (down the list)
             ConsoleKey.UpArrow,
+            
             // Reverse the order the notes are displayed in - oldest first or newest first
             ConsoleKey.R,
+            
             // Move view range to the very top (home, beginning of the list, index 0)
             ConsoleKey.H,
+            
             // Move view range to the very top (home, beginning of the list, index 0)
-            ConsoleKey.W,
+            ConsoleKey.Q,
+            
             // Move view range to the very bottom (end, end of the list)
-            ConsoleKey.S,
-            // Switch to Help mode (open the help menu)
+            ConsoleKey.A,
+            
+            // Set help mode (open the help menu)
             ConsoleKey.H,
-            // Set view mode
+
+            // Set EditSettings mode
+            ConsoleKey.S,
+            
+            // Set ViewNotes mode
             ConsoleKey.V,
-            // Set new note mode
+            
+            // Set NewNote mode
             ConsoleKey.N,
-            // Set delete mode
+            
+            // Set DeleteNote mode
             ConsoleKey.D,
-            // Set edit mode
+            
+            // Set EditNote mode
             ConsoleKey.E
         }).Start();
     }
@@ -162,7 +176,7 @@ public class Program
 
             Update();
         }
-        // Switch to view mode
+        // Switch to ViewNotes mode
         else if (key == ConsoleKey.V)
         {
             UpdateMode(Mode.ViewNotes);
@@ -188,17 +202,22 @@ public class Program
             UpdateMode(Mode.Help);
         }
         // Move view range to the very top (home, beginning of the list, index 0)
-        else if (key == ConsoleKey.W)
+        else if (key == ConsoleKey.Q)
         {
             displayRange = new NotesRange(0, displayRangeCount);
             Update();
             Console.SetCursorPosition(0, 0);
         }
         // Move view range to the very bottom (end, end of the list)
-        else if (key == ConsoleKey.S)
+        else if (key == ConsoleKey.A)
         {
             displayRange = new NotesRange((Notes.Count - (displayRangeCount + 1) > 0) ? Notes.Count - (displayRangeCount + 1) : 0, Notes.Count - 1);
             Update();
+        }
+        // Switch to EditSettings mode
+        else if (key == ConsoleKey.S)
+        {
+            UpdateMode(Mode.EditSettings);
         }
     };
 
@@ -271,6 +290,176 @@ public class Program
             }
 
             CreateNote(title);
+        }
+        else if (mode == Mode.EditSettings)
+        {
+            var rule = new Spectre.Console.Rule("[deeppink3]Current ConsoleNotes Settings[/]");
+            rule.Style = new Style(Color.Yellow);
+            AnsiConsole.Write(rule);
+            Console.WriteLine();
+
+            // Rainbow notes
+            Console.WriteLine($"Show Rainbow Notes:\t{Settings.ShowRainbowNotes}");
+            
+            // Display order
+            if (Settings.NotesDisplayOrder_NewestFirst)
+            {
+                Console.WriteLine("Display Order:\t\tNewest First");
+            }
+            else
+            {
+                Console.WriteLine("Display Order:\t\tOldest First");
+            }
+
+            // Backups
+            Console.WriteLine($"Create Backups:\t\t{Settings.CreateBackups}\n");
+
+            // Colors
+            Console.WriteLine($"Color1: #{Settings.Color1}\t\tColor6: #{Settings.Color6}");
+            Console.WriteLine($"Color2: #{Settings.Color2}\t\tColor7: #{Settings.Color7}");
+            Console.WriteLine($"Color3: #{Settings.Color3}\t\tColor8: #{Settings.Color8}");
+            Console.WriteLine($"Color4: #{Settings.Color4}\t\tColor9: #{Settings.Color9}");
+            Console.WriteLine($"Color5: #{Settings.Color5}\t\tColor0: #{Settings.Color0}");
+
+            // Bottom rule
+            Console.WriteLine();
+            rule.Title = "[deeppink3]Change ConsoleNotes Settings[/]";
+            AnsiConsole.Write(rule);
+            Console.WriteLine();
+
+            // Ask user which setting they want to change
+            var change_setting_prompt = new SelectionPrompt<string>()
+                .Title("[yellow]Which [deeppink3]setting[/] do you want to change?[/]")
+                .AddChoices(new[] {
+                    "Show Rainbow Notes",
+                    "Display Order",
+                    "Create Backups",
+                    "Color1", "Color2", "Color3",
+                    "Color4", "Color5", "Color6",
+                    "Color7", "Color8", "Color9", "Color0",
+                    "Exit"
+                })
+                .HighlightStyle(new Style(Color.DeepPink3));
+
+            change_setting_prompt.DisabledStyle = new Style(Color.Yellow);
+            string change_setting = AnsiConsole.Prompt(change_setting_prompt);
+
+            var regex = new Regex(@"^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$");
+            Func<int, string> ChangeColorTo = (int color_num) =>
+            {
+                string new_color = AnsiConsole.Ask<string>($"[yellow]Enter hex for [deeppink3]Color{color_num}[/]:[/]");
+                if (regex.IsMatch(new_color))
+                {
+                    // Remove #
+                    return new_color.Substring(1);
+                }
+                else
+                {
+                    // Alert user the update failed
+                    MessageBox((IntPtr)0, $"The hex you entered ({new_color}) was invalid\n\nNote: the hex must begin with a #", "Invalid Color Hex", 0);
+                    return string.Empty;
+                }
+            };
+
+            Func<string, bool> AskUserTrueOrFalse = (string question) =>
+            {
+                var set_new_value_prompt = new SelectionPrompt<string>()
+                    .Title($"[yellow]Set new value for: [deeppink3]{question}[/][/]")
+                    .AddChoices(new[] { "True", "False" })
+                    .HighlightStyle(new Style(Color.DeepPink3));
+
+                set_new_value_prompt.DisabledStyle = new Style(Color.Yellow);
+                return AnsiConsole.Prompt(set_new_value_prompt) == "True";
+            };
+
+            string hex;
+            switch (change_setting)
+            {
+                case "Exit":
+                    UpdateMode(Mode.ViewNotes);
+                    break;
+
+                case "Show Rainbow Notes":
+                    Settings.ShowRainbowNotes = AskUserTrueOrFalse("Show Rainbow Notes");
+                    break;
+
+                case "Display Order":
+                    var display_order_new_value_prompt = new SelectionPrompt<string>()
+                    .Title("[yellow]Set new value for: [deeppink3]Display Order[/][/]")
+                    .AddChoices(new[] { "Newest First", "Oldest First" })
+                    .HighlightStyle(new Style(Color.DeepPink3));
+
+                    display_order_new_value_prompt.DisabledStyle = new Style(Color.Yellow);
+                    Settings.NotesDisplayOrder_NewestFirst = AnsiConsole.Prompt(display_order_new_value_prompt) == "Newest First";
+                    break;
+
+                case "Create Backups":
+                    Settings.CreateBackups = AskUserTrueOrFalse("Create Backups");
+                    break;
+
+                case "Color1":
+                    hex = ChangeColorTo(1);
+                    if (hex== string.Empty) Update();
+                    Settings.Color1 = hex;
+                    break;
+
+                case "Color2":
+                    hex = ChangeColorTo(2);
+                    if (hex == string.Empty) Update();
+                    Settings.Color2 = hex;
+                    break;
+
+                case "Color3":
+                    hex = ChangeColorTo(3);
+                    if (hex == string.Empty) Update();
+                    Settings.Color3 = hex;
+                    break;
+
+                case "Color4":
+                    hex = ChangeColorTo(4);
+                    if (hex == string.Empty) Update();
+                    Settings.Color4 = hex;
+                    break;
+
+                case "Color5":
+                    hex = ChangeColorTo(5);
+                    if (hex == string.Empty) Update();
+                    Settings.Color5 = hex;
+                    break;
+
+                case "Color6":
+                    hex = ChangeColorTo(6);
+                    if (hex == string.Empty) Update();
+                    Settings.Color6 = hex;
+                    break;
+
+                case "Color7":
+                    hex = ChangeColorTo(7);
+                    if (hex == string.Empty) Update();
+                    Settings.Color7 = hex;
+                    break;
+
+                case "Color8":
+                    hex = ChangeColorTo(8);
+                    if (hex == string.Empty) Update();
+                    Settings.Color8 = hex;
+                    break;
+
+                case "Color9":
+                    hex = ChangeColorTo(9);
+                    if (hex == string.Empty) Update();
+                    Settings.Color9 = hex;
+                    break;
+
+                case "Color0":
+                    hex = ChangeColorTo(0);
+                    if (hex == string.Empty) Update();
+                    Settings.Color0 = hex;
+                    break;
+            }
+
+            // Refresh to show changes
+            Update();
         }
     }
 
@@ -1330,49 +1519,49 @@ public class Program
 
                     // User Color1 - Ctrl+1
                     case ConsoleKey.D1:
-                        _chars_to_add.AddRange($"[{Settings.Color1.ToMarkup()}][/]");
+                        _chars_to_add.AddRange($"[#{Settings.Color1}][/]");
                         break;
 
                     // User Color2 - Ctrl+2
                     case ConsoleKey.D2:
-                        _chars_to_add.AddRange($"[{Settings.Color2.ToMarkup()}][/]");
+                        _chars_to_add.AddRange($"[#{Settings.Color2}][/]");
                         break;
 
                     // User Color3 - Ctrl+3
                     case ConsoleKey.D3:
-                        _chars_to_add.AddRange($"[{Settings.Color3.ToMarkup()}][/]");
+                        _chars_to_add.AddRange($"[#{Settings.Color3}][/]");
                         break;
 
                     // User Color4 - Ctrl+4
                     case ConsoleKey.D4:
-                        _chars_to_add.AddRange($"[{Settings.Color4.ToMarkup()}][/]");
+                        _chars_to_add.AddRange($"[#{Settings.Color4}][/]");
                         break;
 
                     // User Color5 - Ctrl+5 is under the strikethrough method above (Ctrl+Shift+5)
                     
                     // User Color6 - Ctrl+6
                     case ConsoleKey.D6:
-                        _chars_to_add.AddRange($"[{Settings.Color6.ToMarkup()}][/]");
+                        _chars_to_add.AddRange($"[#{Settings.Color6}][/]");
                         break;
 
                     // User Color7 - Ctrl+7
                     case ConsoleKey.D7:
-                        _chars_to_add.AddRange($"[{Settings.Color7.ToMarkup()}][/]");
+                        _chars_to_add.AddRange($"[#{Settings.Color7}][/]");
                         break;
 
                     // User Color8 - Ctrl+8
                     case ConsoleKey.D8:
-                        _chars_to_add.AddRange($"[{Settings.Color8.ToMarkup()}][/]");
+                        _chars_to_add.AddRange($"[#{Settings.Color8}][/]");
                         break;
 
                     // User Color9 - Ctrl+9
                     case ConsoleKey.D9:
-                        _chars_to_add.AddRange($"[{Settings.Color9.ToMarkup()}][/]");
+                        _chars_to_add.AddRange($"[#{Settings.Color9}][/]");
                         break;
 
                     // User Color0 - Ctrl+0
                     case ConsoleKey.D0:
-                        _chars_to_add.AddRange($"[{Settings.Color0.ToMarkup()}][/]");
+                        _chars_to_add.AddRange($"[#{Settings.Color0}][/]");
                         break;
 
                     // No special keybind preseed
