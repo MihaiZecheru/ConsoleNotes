@@ -120,7 +120,7 @@ public class Note
         Panel panel;
         if (IsJson)
         {
-            panel = new Panel(new JsonText(Body));
+            panel = new Panel(new JsonText(Body).CommaColor(Spectre.Console.Color.Silver).BracketColor(Spectre.Console.Color.Silver).BracesColor(Spectre.Console.Color.Silver));
         }
         else
         {
