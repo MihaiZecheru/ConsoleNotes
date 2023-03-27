@@ -101,26 +101,26 @@ public class Note
     }
 
     /// <summary>
-    /// Turn the note into a <see cref="Spectre.Console.Panel"/>,
+    /// Turn the note into a <see cref="Panel"/>,
     /// which can be displayed to the screen with <see cref="AnsiConsole.Write()"/>
     /// </summary>
     /// <remarks>
     /// The panel's border will be given the next color from the ColorCycle
     /// <br/><br/>
-    /// The color of the border is returned so that the <see cref="Spectre.Console.Rule"/>
+    /// The color of the border is returned so that the <see cref="Rule"/>
     /// which displays the Date of the note can be given the same color
     /// </remarks>
     /// <returns>
-    /// Item1: <see cref="Spectre.Console.Panel"/> to display on the console<br/>
-    /// Item2: The <see cref="Spectre.Console.Color"/> used for the panel's border
+    /// Item1: <see cref="Panel"/> to display on the console<br/>
+    /// Item2: The <see cref="Color"/> used for the panel's border
     /// </returns>
-    private Tuple<Spectre.Console.Panel, Spectre.Console.Color> GetAsPanel()
+    private Tuple<Panel, Color> GetAsPanel()
     {
         // Panel and panel header
         Panel panel;
         if (IsJson)
         {
-            panel = new Panel(new JsonText(Body).CommaColor(Spectre.Console.Color.Silver).BracketColor(Spectre.Console.Color.Silver).BracesColor(Spectre.Console.Color.Silver));
+            panel = new Panel(new JsonText(Body).CommaColor(Color.Silver).BracketColor(Color.Silver).BracesColor(Color.Silver));
         }
         else
         {
@@ -130,7 +130,7 @@ public class Note
         if (!NoTitle) panel.Header = new PanelHeader(Title);
 
         // Add ColorCycle border color only if user has rainbow notes enabled
-        Spectre.Console.Color color;
+        Color color;
         if (Program.Settings.ShowRainbowNotes)
         {
             color = ColorCycle.Next();
@@ -138,7 +138,7 @@ public class Note
         }
         else
         {
-            color = Spectre.Console.Color.Default;
+            color = Color.Default;
         }
 
         // Expand the panel before returning
@@ -146,12 +146,12 @@ public class Note
     }
 
     /// <summary>
-    /// Write the note to the console inside of a <see cref="Spectre.Console.Panel"/>,
+    /// Write the note to the console inside of a <see cref="Panel"/>,
     /// with the note's date as its header
     /// </summary>
     public void Display()
     {
-        (Spectre.Console.Panel noteAsPanel, Spectre.Console.Color color) = GetAsPanel();
+        (Panel noteAsPanel, Color color) = GetAsPanel();
 
         // Header rule
         Rule dateDisplay = new Rule(CreatedAt);
