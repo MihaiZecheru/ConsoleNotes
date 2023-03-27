@@ -5,9 +5,9 @@ namespace ConsoleNotes;
 public class UserSettings
 {
     /// <summary>
-    /// Prevents the SaveSettings() method from being called when the default settings are being set
+    /// Prevents the SaveSettings() method from being called while the object is being constructed
     /// </summary>
-    private bool setting_default = false;
+    private bool constructing = false;
 
     private bool showRainbowNotes;
     private bool notesDisplayOrder_NewestFirst;
@@ -131,6 +131,7 @@ public class UserSettings
 
     public UserSettings()
     {
+        constructing = true;
         if (File.Exists(SettingsFilePath))
         {
             using StreamReader streamReader = File.OpenText(SettingsFilePath);
@@ -180,6 +181,8 @@ public class UserSettings
         {
             CreateFileWithDefaultSettings();
         }
+
+        constructing = true;
     }
 
     public override string ToString()
@@ -201,13 +204,13 @@ public class UserSettings
 
     public void SaveSettings()
     {
-        if (!setting_default)
-        File.WriteAllText(SettingsFilePath, this.ToString());
+        if (!constructing)
+            File.WriteAllText(SettingsFilePath, this.ToString());
     }
 
     private void CreateFileWithDefaultSettings()
     {
-        setting_default = true;
+        constructing = true;
 
         // Set all settings to default values
         ShowRainbowNotes = DefaultSettings.ShowRainbowNotes;
@@ -224,7 +227,7 @@ public class UserSettings
         Color9 = DefaultSettings.Color9;
         Color0 = DefaultSettings.Color0;
 
-        setting_default = false;
+        constructing = false;
 
         // Write settings to file
         SaveSettings();
