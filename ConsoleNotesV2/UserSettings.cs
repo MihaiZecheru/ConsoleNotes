@@ -4,19 +4,123 @@ namespace ConsoleNotes;
 
 public class UserSettings
 {
-    public bool ShowRainbowNotes { get; set; }
-    public bool NotesDisplayOrder_NewestFirst { get; set; }
-    public bool CreateBackups { get; set; }
-    public Color Color1 { get; set; }
-    public Color Color2 { get; set; }
-    public Color Color3 { get; set; }
-    public Color Color4 { get; set; }
-    public Color Color5 { get; set; }
-    public Color Color6 { get; set; }
-    public Color Color7 { get; set; }
-    public Color Color8 { get; set; }
-    public Color Color9 { get; set; }
-    public Color Color0 { get; set; }
+    private bool showRainbowNotes;
+    private bool notesDisplayOrder_NewestFirst;
+    private bool createBackups;
+    private Color color1;
+    private Color color2;
+    private Color color3;
+    private Color color4;
+    private Color color5;
+    private Color color6;
+    private Color color7;
+    private Color color8;
+    private Color color9;
+    private Color color0;
+
+    public bool ShowRainbowNotes {
+        get => showRainbowNotes;
+        set {
+            showRainbowNotes = value;
+            SaveSettings();
+        }
+    }
+    public bool NotesDisplayOrder_NewestFirst
+    {
+        get => notesDisplayOrder_NewestFirst;
+        set {
+            notesDisplayOrder_NewestFirst = value;
+            SaveSettings();
+        }
+    }
+    public bool CreateBackups
+    {
+        get => createBackups;
+        set {
+            createBackups = value;
+            SaveSettings();
+        }
+    }
+    public Color Color1
+    {
+        get => color1;
+        set {
+            color1 = value;
+            SaveSettings();
+        }
+    }
+    public Color Color2
+    {
+        get => color2;
+        set {
+            color2 = value;
+            SaveSettings();
+        }
+    }
+    public Color Color3
+    {
+        get => color3;
+        set {
+            color3 = value;
+            SaveSettings();
+        }
+    }
+    public Color Color4
+    {
+        get => color4;
+        set {
+            color4 = value;
+            SaveSettings();
+        }
+    }
+    public Color Color5
+    {
+        get => color5;
+        set {
+            color5 = value;
+            SaveSettings();
+        }
+    }
+    public Color Color6
+    {
+        get => color6;
+        set {
+            color6 = value;
+            SaveSettings();
+        }
+    }
+    public Color Color7
+    {
+        get => color7;
+        set {
+            color7 = value;
+            SaveSettings();
+        }
+    }
+    public Color Color8
+    {
+        get => color8;
+        set {
+            color8 = value;
+            SaveSettings();
+        }
+    }
+    public Color Color9
+    {
+        get => color9;
+        set {
+            color9 = value;
+            SaveSettings();
+        }
+    }
+    public Color Color0
+    {
+        get => color0;
+        set {
+            color0 = value;
+            SaveSettings();
+        }
+    }
 
     public static string SettingsFilePath { get; } = @"C:\ConsoleNotes\settings.txt";
 
@@ -32,38 +136,38 @@ public class UserSettings
             ShowRainbowNotes = Convert.ToBoolean(lines[0].Split('=')[1]);
             NotesDisplayOrder_NewestFirst = Convert.ToBoolean(lines[1].Split('=')[1]);
             CreateBackups = Convert.ToBoolean(lines[2].Split('=')[1]);
-            
+
             // Each color looks like this in the file: Color{i}=r-g-b
             // lines[i].Split('=') gets the r-g-b, then .Split('-') separates the r, g, & b
 
             string[] rgb;
             rgb = lines[3].Split('=')[1].Split('-');
             Color1 = new Color(Convert.ToByte(rgb[0]), Convert.ToByte(rgb[1]), Convert.ToByte(rgb[2]));
-            
+
             rgb = lines[4].Split('=')[1].Split('-');
             Color2 = new Color(Convert.ToByte(rgb[0]), Convert.ToByte(rgb[1]), Convert.ToByte(rgb[2]));
-            
+
             rgb = lines[5].Split('=')[1].Split('-');
             Color3 = new Color(Convert.ToByte(rgb[0]), Convert.ToByte(rgb[1]), Convert.ToByte(rgb[2]));
-            
+
             rgb = lines[6].Split('=')[1].Split('-');
             Color4 = new Color(Convert.ToByte(rgb[0]), Convert.ToByte(rgb[1]), Convert.ToByte(rgb[2]));
-            
+
             rgb = lines[7].Split('=')[1].Split('-');
             Color5 = new Color(Convert.ToByte(rgb[0]), Convert.ToByte(rgb[1]), Convert.ToByte(rgb[2]));
-            
+
             rgb = lines[8].Split('=')[1].Split('-');
             Color6 = new Color(Convert.ToByte(rgb[0]), Convert.ToByte(rgb[1]), Convert.ToByte(rgb[2]));
-            
+
             rgb = lines[9].Split('=')[1].Split('-');
             Color7 = new Color(Convert.ToByte(rgb[0]), Convert.ToByte(rgb[1]), Convert.ToByte(rgb[2]));
-            
+
             rgb = lines[10].Split('=')[1].Split('-');
             Color8 = new Color(Convert.ToByte(rgb[0]), Convert.ToByte(rgb[1]), Convert.ToByte(rgb[2]));
-            
+
             rgb = lines[11].Split('=')[1].Split('-');
             Color9 = new Color(Convert.ToByte(rgb[0]), Convert.ToByte(rgb[1]), Convert.ToByte(rgb[2]));
-            
+
             rgb = lines[12].Split('=')[1].Split('-');
             Color0 = new Color(Convert.ToByte(rgb[0]), Convert.ToByte(rgb[1]), Convert.ToByte(rgb[2]));
         }
