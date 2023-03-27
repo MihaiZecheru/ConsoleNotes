@@ -1,6 +1,8 @@
 ﻿using Spectre.Console;
 using System.Text.RegularExpressions;
 using System.Runtime.InteropServices;
+using Spectre.Console.Json;
+using System.Diagnostics;
 
 namespace ConsoleNotes;
 
@@ -332,26 +334,79 @@ public class Program
             // Create then save the note - Ctrl+S 
             if (keyinfo.Key == ConsoleKey.S && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control))
             {
-                /***
-                 * As users are allowed to write markup using [style]content[/] syntax,
-                 * there is a chance for user error to leave unmatched brackets, or to use
-                 * a square bracket and forgetting to escape it when using the bracket normally.
-                 * 
-                 * An attempt will be made to compile the note prematurely, and if it fails,
-                 * the user will get a popup letting them know the note couldn't compile.
-                 ***/
-                try
-                {
-                    if (GetNoteContent(0).Length > 0)
+                if (GetNoteContent(0).Length > 0) {
+                    /***
+                     * As users are allowed to write markup using [style]content[/] syntax,
+                     * there is a chance for user error to leave unmatched brackets, or to use
+                     * a square bracket and forgetting to escape it when using the bracket normally.
+                     * 
+                     * An attempt will be made to compile the note prematurely, and if it fails,
+                     * the user will get a popup letting them know the note couldn't compile.
+                     ***/
+                    string note = GetNoteContent(0);
+                    try
                     {
-                        new Markup(GetNoteContent(0));
-                        // break statement wont be reached if there is an error with the markup
+                        /*** Attempt to compile ***/
+                        if (isJson)
+                        {
+                            JsonText json = new Spectre.Console.Json.JsonText(note);
+
+                            // The .Build method is called when trying to print to the console,
+                            // but the input should be captured so that it doesn't actually write anything
+                            // to the console, and instead just calls the .Build method internally.
+                            // If there is an error, it will be caught and the error message will be shown,
+                            // with the text on the console remaining unchanged.
+                            
+                            // Temporarily capture the console input
+                            bool stop = false;
+                            new Thread(() =>
+                            {
+                                while (true)
+                                {
+                                    if (stop) break;
+                                    Console.ReadKey(true);
+                                }
+                            }).Start();
+
+                            // Invoke the .Build method
+                            AnsiConsole.Write(json);
+                            
+                            // Stop capturing console input
+                            stop = true;
+                        }
+                        else
+                        {
+                            // Compile non-json note
+                            new Markup(note);
+                        }
+
+                        // break statement wont be reached if there is an error with compiling the Json/markup
                         break; // Exit while loop, note will be created outside loop
                     }
-                }
-                catch (InvalidOperationException e)
-                {
-                    MessageBox((IntPtr)0, $"Check your note for any markup errors. Make sure all square brackets are escaped with [[ or ]].\n\nError: {e.Message}", "Markup Syntax Error", 0);
+                    catch (InvalidOperationException e)
+                    {
+                        if (isJson)
+                        {
+                            int result = MessageBox((IntPtr)0, $"Check your JSON for any erros. There might be a comma or other character in the wrong place. " +
+                                $"\n\nError: {e.Message}" +
+                                $"\n\nDo you want to open a JSON validator in your browser? Your note will be copied to clipboard.",
+                            "JSON Syntax Error", 4);
+
+                            // If user presses 'Yes'
+                            if (result == 6)
+                            {
+                                // Go to json validator website
+                                Process.Start(new ProcessStartInfo("cmd", $"/c start https://jsonlint.com/") { CreateNoWindow = true });
+
+                                // Copy currently written text to clipboard for quickly pasting it in to check what's wrong
+                                TextCopy.ClipboardService.SetText(note);
+                            }
+                        }
+                        else
+                        {
+                            MessageBox((IntPtr)0, $"Check your note for any markup errors. Make sure all square brackets are escaped with [[ or ]].\n\nError: {e.Message}", "Markup Syntax Error", 0);
+                        }
+                    }
                 }
 
                 continue;
@@ -1171,6 +1226,9 @@ public class Program
             //       square bracket                                                                             regular parenthesis
             else if ((keyinfo.Key == ConsoleKey.Oem4 && !keyinfo.Modifiers.HasFlag(ConsoleModifiers.Shift)) || (keyinfo.Key == ConsoleKey.D9 && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Shift)))
             {
+                // Don't do this while in JSON-Only mode
+                if (isJson) goto skip_;
+
                 /***
                  * IMPORTANT: If the line has too many characters in it, overflow
                  * will be prevented by blocking new characters from being written
@@ -1206,12 +1264,16 @@ public class Program
                 }
 
                 continue;
+                skip_:;
             }
             /***
              * Markup keybinds
              ***/
             else if (keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control))
             {
+                // Don't do this while in JSON-Only mode
+                if (isJson) goto skip__;
+
                 /***
                  * Pressing one of these keybinds will
                  * insert a spectre.console markup style
@@ -1280,6 +1342,7 @@ public class Program
                 states.AddState(lines, Tuple.Create(ci, cli));
                 chars_pressed = 0;
                 continue;
+                skip__:;
             }
             // Skip if the pressed key will **NOT** output an alphanumeric character
             else if (
