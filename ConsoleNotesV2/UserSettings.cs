@@ -99,7 +99,7 @@ public class UserSettings
     {
         // Set all settings to default values
         ShowRainbowNotes = DefaultSettings.ShowRainbowNotes;
-        NotesDisplayOrder_NewestFirst = DefaultSettings.NotesDisplayOrder_OldestFirst;
+        NotesDisplayOrder_NewestFirst = DefaultSettings.NotesDisplayOrder_NewestFirst;
         CreateBackups = DefaultSettings.CreateBackups;
         Color1 = DefaultSettings.Color1;
         Color2 = DefaultSettings.Color2;
