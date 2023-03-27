@@ -4,6 +4,11 @@ namespace ConsoleNotes;
 
 public class UserSettings
 {
+    /// <summary>
+    /// Prevents the SaveSettings() method from being called when the default settings are being set
+    /// </summary>
+    private bool setting_default = false;
+
     private bool showRainbowNotes;
     private bool notesDisplayOrder_NewestFirst;
     private bool createBackups;
@@ -196,11 +201,14 @@ public class UserSettings
 
     public void SaveSettings()
     {
+        if (!setting_default)
         File.WriteAllText(SettingsFilePath, this.ToString());
     }
 
     private void CreateFileWithDefaultSettings()
     {
+        setting_default = true;
+
         // Set all settings to default values
         ShowRainbowNotes = DefaultSettings.ShowRainbowNotes;
         NotesDisplayOrder_NewestFirst = DefaultSettings.NotesDisplayOrder_NewestFirst;
@@ -215,6 +223,8 @@ public class UserSettings
         Color8 = DefaultSettings.Color8;
         Color9 = DefaultSettings.Color9;
         Color0 = DefaultSettings.Color0;
+
+        setting_default = false;
 
         // Write settings to file
         SaveSettings();
