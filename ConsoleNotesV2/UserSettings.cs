@@ -5,7 +5,7 @@ namespace ConsoleNotes;
 public class UserSettings
 {
     public bool ShowRainbowNotes { get; set; }
-    public bool NotesDisplayOrder_OldestFirst { get; set; }
+    public bool NotesDisplayOrder_NewestFirst { get; set; }
     public bool CreateBackups { get; set; }
     public Color Color1 { get; set; }
     public Color Color2 { get; set; }
@@ -30,7 +30,7 @@ public class UserSettings
 
             // File follows the same order as the properties up top
             ShowRainbowNotes = Convert.ToBoolean(lines[0].Split('=')[1]);
-            NotesDisplayOrder_OldestFirst = Convert.ToBoolean(lines[1].Split('=')[1]);
+            NotesDisplayOrder_NewestFirst = Convert.ToBoolean(lines[1].Split('=')[1]);
             CreateBackups = Convert.ToBoolean(lines[2].Split('=')[1]);
             
             // Each color looks like this in the file: Color{i}=r-g-b
@@ -76,7 +76,7 @@ public class UserSettings
     public override string ToString()
     {
         return $"ShowRainbowNotes={ShowRainbowNotes}\n" +
-               $"NotesDisplayOrder_OldestFirst={NotesDisplayOrder_OldestFirst}\n" +
+               $"NotesDisplayOrder_OldestFirst={NotesDisplayOrder_NewestFirst}\n" +
                $"CreateBackups={CreateBackups}\n" +
                $"Color1={Color1.R}-{Color1.G}-{Color1.B}\n" +
                $"Color2={Color2.R}-{Color2.G}-{Color2.B}\n" +
@@ -99,7 +99,7 @@ public class UserSettings
     {
         // Set all settings to default values
         ShowRainbowNotes = DefaultSettings.ShowRainbowNotes;
-        NotesDisplayOrder_OldestFirst = DefaultSettings.NotesDisplayOrder_OldestFirst;
+        NotesDisplayOrder_NewestFirst = DefaultSettings.NotesDisplayOrder_OldestFirst;
         CreateBackups = DefaultSettings.CreateBackups;
         Color1 = DefaultSettings.Color1;
         Color2 = DefaultSettings.Color2;
