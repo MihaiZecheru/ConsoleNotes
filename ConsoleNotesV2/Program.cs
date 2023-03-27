@@ -8,6 +8,7 @@ namespace ConsoleNotes;
 
 public class Program
 {
+    public static UserSettings Settings;
     private static List<Note> Notes;
     private static NotesRange displayRange;
     private static int displayRangeCount = 10;
@@ -25,11 +26,15 @@ public class Program
         /* Setup notes file */
         string notesFilepath = @"C:\ConsoleNotes\notes.txt";
 
+
         if (!File.Exists(notesFilepath))
         {
             Directory.CreateDirectory(@"C:\ConsoleNotes");
             File.Create(notesFilepath);
         }
+
+        /* Get settings from file */
+        Settings = new UserSettings();
 
         /* Setup console */
         Console.Title = "Console Notes";
@@ -45,16 +50,8 @@ public class Program
         Notes = raw_notes.Select(n => new Note(n)).ToList();
 
         /* Show notes */
-            displayRange = new NotesRange((Notes.Count - (displayRangeCount + 1) > 0) ? Notes.Count - (displayRangeCount + 1) : 0, Notes.Count - 1);
-        //if (NotesOrderNewestFirst)
-        //{
-        //    // If there are more notes than the display range count, start the display range at the index of the last note minus the display range count
-        //}
-        //else
-        //{
-        //    // If there are more notes than the display range count, end the display range at the index of the last note minus the display range count
-        //    displayRange = new NotesRange(0, (Notes.Count - (displayRangeCount + 1) > 0) ? Notes.Count - (displayRangeCount + 1) : 0);
-        //}
+        displayRange = new NotesRange((Notes.Count - (displayRangeCount + 1) > 0) ? Notes.Count - (displayRangeCount + 1) : 0, Notes.Count - 1);
+        NotesOrderNewestFirst = Settings.NotesDisplayOrder_OldestFirst;
 
         /* Wait to continue */
         Console.ReadKey(true);
@@ -1291,27 +1288,93 @@ public class Program
                     case ConsoleKey.I:
                         _chars_to_add.AddRange("[italic][/]");
                         break;
+
                     // Bold - Ctrl+B
                     // Blink - Ctrl+Shift+B
                     case ConsoleKey.B:
-                        // Ctrl+B
-                        if (keyinfo.Modifiers.HasFlag(ConsoleModifiers.Shift)) _chars_to_add.AddRange("[rapidblink][/]");
-                        // Ctrl+Shift+B
-                        else _chars_to_add.AddRange("[bold][/]");
+                        // Bold - Ctrl+B
+                        if (keyinfo.Modifiers.HasFlag(ConsoleModifiers.Shift))
+                        {
+                            _chars_to_add.AddRange("[rapidblink][/]");
+                        }
+                        // Blink - Ctrl+Shift+B
+                        else
+                        {
+                            _chars_to_add.AddRange("[bold][/]");
+                        }
                         break;
+
                     // Underline - Ctrl+U
                     case ConsoleKey.U:
                         _chars_to_add.AddRange("[underline][/]");
                         break;
+
                     // Strikethrough - Ctrl+Shift+5
                     case ConsoleKey.D5:
-                        if (!keyinfo.Modifiers.HasFlag(ConsoleModifiers.Shift)) continue;
-                        _chars_to_add.AddRange("[strikethrough][/]");
+                        // Strikethrough - Ctrl+Shift+5
+                        if (keyinfo.Modifiers.HasFlag(ConsoleModifiers.Shift))
+                        {
+                            _chars_to_add.AddRange("[strikethrough][/]");
+                        }
+                        // User Color5 - Ctrl+5
+                        else
+                        {
+                            _chars_to_add.AddRange($"[{Settings.Color5}][/]");
+                        }
                         break;
+
                     // Dim - Ctrl+D
                     case ConsoleKey.D:
                         _chars_to_add.AddRange("[dim][/]");
                         break;
+
+                    // User Color1 - Ctrl+1
+                    case ConsoleKey.D1:
+                        _chars_to_add.AddRange($"[{Settings.Color1.ToMarkup()}][/]");
+                        break;
+
+                    // User Color2 - Ctrl+2
+                    case ConsoleKey.D2:
+                        _chars_to_add.AddRange($"[{Settings.Color2.ToMarkup()}][/]");
+                        break;
+
+                    // User Color3 - Ctrl+3
+                    case ConsoleKey.D3:
+                        _chars_to_add.AddRange($"[{Settings.Color3.ToMarkup()}][/]");
+                        break;
+
+                    // User Color4 - Ctrl+4
+                    case ConsoleKey.D4:
+                        _chars_to_add.AddRange($"[{Settings.Color4.ToMarkup()}][/]");
+                        break;
+
+                    // User Color5 - Ctrl+5 is under the strikethrough method above (Ctrl+Shift+5)
+                    
+                    // User Color6 - Ctrl+6
+                    case ConsoleKey.D6:
+                        _chars_to_add.AddRange($"[{Settings.Color6.ToMarkup()}][/]");
+                        break;
+
+                    // User Color7 - Ctrl+7
+                    case ConsoleKey.D7:
+                        _chars_to_add.AddRange($"[{Settings.Color7.ToMarkup()}][/]");
+                        break;
+
+                    // User Color8 - Ctrl+8
+                    case ConsoleKey.D8:
+                        _chars_to_add.AddRange($"[{Settings.Color8.ToMarkup()}][/]");
+                        break;
+
+                    // User Color9 - Ctrl+9
+                    case ConsoleKey.D9:
+                        _chars_to_add.AddRange($"[{Settings.Color9.ToMarkup()}][/]");
+                        break;
+
+                    // User Color0 - Ctrl+0
+                    case ConsoleKey.D0:
+                        _chars_to_add.AddRange($"[{Settings.Color0.ToMarkup()}][/]");
+                        break;
+
                     // No special keybind preseed
                     default: continue;
                 }
