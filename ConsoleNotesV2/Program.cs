@@ -698,15 +698,22 @@ public class Program
                  ***/
                 if (cli == Console.BufferHeight - 3) continue;
 
-                // Create the line only if cursor is on the last line
-                if (cli == lines.Count - 1)
+                // Add the new line
+                lines.Insert(++cli, new List<char>());
+                ci = 0;
+
+                // Write the new line
+                Console.Write(new string(' ', Console.BufferWidth));
+
+                // Rewrite lines following the newly added line
+                for (int i = Convert.ToInt32(cli.ToString()); i <= lines.Count - cli; i++)
                 {
-                    lines.Add(new List<char>());
+                    string line = new string(lines[i].ToArray());
+                    Console.WriteLine(line);
                 }
 
-                // Move the cursor down to the next line anyway
-                cli++;
-                ci = 0;
+                // Reset cursor loc
+                Console.SetCursorPosition(0, cli);
                 
                 // Check save
                 chars_pressed += 2; // Enter counts as 2 chars pressed
