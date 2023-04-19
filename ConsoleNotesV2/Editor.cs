@@ -606,8 +606,8 @@ internal class Editor
             Console.WriteLine(new string(lines[i].ToArray()));
         }
 
-        // Reset cursor loc
-        Console.SetCursorPosition(0, cli);
+        // Move cursor to next line
+        Console.SetCursorPosition(0, cli + 1);
 
         // Check save
         chars_pressed += 2; // Enter counts as 2 chars pressed
@@ -616,9 +616,6 @@ internal class Editor
             states.AddState(lines, Tuple.Create(ci, cli));
             chars_pressed = 0;
         }
-
-        // Move to next line
-        Console.SetCursorPosition(0, Console.CursorTop + 1);
     }
 
     /// <summary>
