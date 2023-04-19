@@ -528,7 +528,7 @@ internal class Editor
         Console.Clear();
 
         // Rewrite the horizontal rule
-        string rule_header = isJson ? "Write A New Note" : "Write A New Note - JSON Only";
+        string rule_header = isJson ? "Write A New Note - JSON Only" : "Write A New Note";
         var rule = new Spectre.Console.Rule($"[deeppink3]{rule_header}[/]");
         rule.Style = new Style(Color.Yellow);
         AnsiConsole.Write(rule);
