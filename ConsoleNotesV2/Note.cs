@@ -54,7 +54,19 @@ public class Note
     /// <summary>
     /// Datetime string of the time the note was created
     /// </summary>
-    public string CreatedAt { get; }
+    private readonly string createdAt;
+
+    /// <summary>
+    /// Will automatically format the <see cref="createdAt"/> datetime based on the user's <see cref="DefaultSettings.DateDayFirst"/> setting
+    /// </summary>
+    public string CreatedAt
+    {
+        get
+        {
+            DateTime datestamp = DateTime.ParseExact(createdAt, "dd/MM/yyyy HH:mm:ss", null);
+            return Program.Settings.DateDayFirst ? datestamp.ToString("dd/MM/yyyy HH:mm:ss") : datestamp.ToString("MM/dd/yyyy HH:mm:ss");
+        }
+    }
 
     /// <summary>
     /// If the note is JSON-only, meaning the body is a JSON object with no additional text
@@ -71,7 +83,7 @@ public class Note
         Title = title;
         Body = body;
         NoTitle = (Title == EmptyTitle);
-        CreatedAt = DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss");
+        createdAt = DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss");
         IsJson = isJson;
     }
 
@@ -94,7 +106,7 @@ public class Note
         string body = note[1]; // Just the body
 
         // Set attributes
-        CreatedAt = titleAndDate[1];
+        createdAt = titleAndDate[1];
         Title = titleAndDate[2];
         Body = body;
         NoTitle = (Title == EmptyTitle);
@@ -126,7 +138,7 @@ public class Note
         {
             panel = new Panel(new Markup(Body));
         }
-        
+
         if (!NoTitle) panel.Header = new PanelHeader(Title);
 
         // Add ColorCycle border color only if user has rainbow notes enabled
@@ -153,12 +165,8 @@ public class Note
     {
         (Panel noteAsPanel, Color color) = GetAsPanel();
 
-        // Get date
-        DateTime datestamp = DateTime.ParseExact(CreatedAt, "dd/MM/yyyy HH:mm:ss", null);
-        string date = Program.Settings.DateDayFirst ? datestamp.ToString("dd/MM/yyyy HH:mm:ss") : datestamp.ToString("MM/dd/yyyy HH:mm:ss");
-
         // Header rule
-        Rule dateDisplay = new Rule(date);
+        Rule dateDisplay = new Rule(CreatedAt);
         dateDisplay.Style = new Style(color);
 
         // Display the note
@@ -176,7 +184,7 @@ public class Note
     public override string ToString()
     {
         return (IsJson ? IsJsonIndicator : "")
-            + $"{DateSeparator}{CreatedAt}{DateSeparator}{Title}{TitleSeparator}{Body}";
+            + $"{DateSeparator}{createdAt}{DateSeparator}{Title}{TitleSeparator}{Body}";
     }
 
     /// <summary>
