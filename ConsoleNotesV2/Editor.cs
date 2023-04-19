@@ -214,6 +214,12 @@ internal class Editor
                 this.Delete();
                 continue;
             }
+            // Delete current line - Ctrl+K
+            else if (keyinfo.Key == ConsoleKey.K && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control))
+            {
+                this.CtrlShiftK();
+                continue;
+            }
             // Add closing markup tag [/] - Ctrl+/
             else if (keyinfo.Key == ConsoleKey.Oem2 && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control))
             {
@@ -1279,6 +1285,46 @@ internal class Editor
                 // This delete simply undid a change, so chars_pressed should be decremented to even out the chars_pressed_tracker
                 chars_pressed--;
             }
+        }
+    }
+
+    /// <summary>
+    /// Ctrl+Shift+K - delete the current line
+    /// </summary>
+    private void CtrlShiftK()
+    {
+        /*** Deletes the current line ***/
+
+        // If there are no lines to delete
+        if (lines.Count == 0) return;
+
+        // Add the new line
+        lines.RemoveAt(cli--);
+        ci = lines[cli].Count;
+
+        // Clear screen
+        Console.SetCursorPosition(0, 1);
+        for (int i = 0; i < lines.Count + 1; i++)
+        {
+            Console.WriteLine(new string(' ', Console.BufferWidth));
+        }
+
+        // Rewrite note
+        Console.SetCursorPosition(0, 1);
+        for (int i = 0; i < lines.Count; i++)
+        {
+            Console.WriteLine(new string(lines[i].ToArray()));
+        }
+
+        // Reset cursor loc
+        Console.SetCursorPosition(ci, cli + 1);
+
+        // Check save
+        chars_pressed += 2; // Deleting the line counts as 2 chars pressed
+        if (chars_pressed >= save_every)
+        {
+            states.AddState(lines, Tuple.Create(ci, cli));
+            chars_pressed = 0;
         }
     }
 
