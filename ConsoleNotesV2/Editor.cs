@@ -588,8 +588,14 @@ internal class Editor
          ***/
         if (cli == Console.BufferHeight - 3) return;
 
+        // From the current line, get text until end of line
+        List<char> new_line = lines[cli].GetRange(ci, lines[cli].Count - ci);
+
+        // Remove that text from current line
+        lines[cli].RemoveRange(ci, lines[cli].Count - ci);
+
         // Add the new line
-        lines.Insert(++cli, new List<char>());
+        lines.Insert(++cli, new_line);
         ci = 0;
 
         // Clear screen
