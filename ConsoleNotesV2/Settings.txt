@@ -1,0 +1,15 @@
+Show Rainbow Notes
+	- Give the notes borders in a rainbow pattern while in Mode.ViewNotes
+
+Display Order
+	- While on 'Newest First', newer notes will be shown first
+	- While on 'Oldest First', older notes will be shown first
+
+Create Backups
+	- If true, a backup of notes.txt will be created
+
+DateDayFirst
+	- If true, the date format used is dd/MM/yyyy, otherwise, it's MM/dd/yyyy
+
+Color1, Color2, Color3, Color4, Color5, Color6, Color7, Color8, Color9, Color0
+	- Custom color hexes for inserting as markup when pressing the Ctrl+1, Ctrl+2, etc. keybinds
