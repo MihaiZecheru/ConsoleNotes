@@ -1318,10 +1318,11 @@ internal class Editor
     }
 
     /// <summary>
-    /// For when [ or ( is pressed - the corresponding closing bracket will be added as well
+    /// For when [, (, or { is pressed - the corresponding closing bracket will be added as well
     /// <br/><br/>
     /// Add ending bracket when pressing the opening bracket [ => []
     /// Add ending bracket when pressing the opening bracket ( => ()
+    /// Add ending bracket when pressing the opening bracket { => {}
     /// </summary>
     /// <param name="bracket_type">The type of closing bracket to add: ] = 0, ) = 1, } = 2</param>
     private void ClosingBracket(int bracket_type)
