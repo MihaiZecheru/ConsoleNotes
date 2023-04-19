@@ -41,6 +41,7 @@ internal class CtrlZ
     /// Update the current state of the note
     /// </summary>
     /// <param name="note">The updated note</param>
+    /// <param name="cursor_pos">Tuple containing the position of the cursor in the format of (Left, Top)</param>
     public void AddState(List<List<char>> note, Tuple<int, int> cursor_pos)
     {
         // Check if state should be added to the end
