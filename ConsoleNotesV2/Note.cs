@@ -29,7 +29,7 @@ public class Note
     /// <summary>
     /// The string used to represent a note without a title
     /// </summary>
-    private static string EmptyTitle = "{{TITLE_EMPTY}}";
+    public static string EmptyTitle = "{{TITLE_EMPTY}}";
 
     /// <summary>
     /// Indicates whether a note is JSON-only
