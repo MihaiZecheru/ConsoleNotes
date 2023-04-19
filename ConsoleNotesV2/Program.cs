@@ -528,12 +528,21 @@ public class Program
         {
             int selected_note_index = GetSelectedNoteIndex();
             if (selected_note_index == -1) return;
+            Note selected_note = Notes[selected_note_index];
+            /** Show preview of selected note **/
+            
+            // Move past where the prompt will appear
+            Console.SetCursorPosition(0, 5);
 
-            // Show preview of selected note
+            // Write the selected note to the console
+            selected_note.Display();
 
+            // Move cursor back to beginning
+            Console.SetCursorPosition(0, 0);
 
+            // Write prompt
             var confirmation_prompt = new SelectionPrompt<string>()
-                .Title($"[yellow]Are you sure you want to delete note [deeppink3]#{selected_note_index}[/]?[/]")
+                .Title($"[yellow]Are you sure you want to delete note [deeppink3]#{Math.Abs(selected_note_index - Notes.Count)}[/]?[/]")
                 .AddChoices(new[] { "Yes", "No" })
                 .HighlightStyle(new Style(Color.DeepPink3));
 
@@ -666,7 +675,7 @@ public class Program
         
         // Notes were reversed earlier in the function, so the index needs to be reversed back
         if (NotesOrderNewestFirst)
-            return Notes.Count - (note_index - 1);
+            return Notes.Count - note_index;
         else
             return note_index - 1;
     }
