@@ -130,4 +130,10 @@ internal class CtrlZ
             return Tuple.Create(NoteStates[ActiveIndex], CursorStates[ActiveIndex]);
         }
     }
+
+    public void RemoveAt(int index)
+    {
+        this.NoteStates.RemoveAt(index);
+        this.CursorStates.RemoveAt(index);
+    }
 }
