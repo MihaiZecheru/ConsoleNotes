@@ -633,7 +633,10 @@ public class Program
     private static int GetSelectedNoteIndex()
     {
         List<string> choices = new List<string>() { "Quit" };
-        IEnumerable<string> parsedNotes = Notes.Select((note, index) =>
+
+        // Reverse notes to show the most recent ones at the top
+        IEnumerable<Note> notes_sorted = NotesOrderNewestFirst ? Notes.ToArray().Reverse() : Notes;
+        IEnumerable<string> parsedNotes = notes_sorted.Select((note, index) =>
         {
             string date = note.CreatedAt;
             string date_only = date.Substring(0, date.IndexOf(' '));
@@ -643,16 +646,11 @@ public class Program
             else
                 return $"{index + 1}. {date_only} | {note.Title}";
         });
-
-        // Have newest at the bottom like how it is in Mode.ViewNotes
-        if (NotesOrderNewestFirst)
-            choices.AddRange(parsedNotes);
-        else // Have newest at the top (Mode.ViewNotes)
-            choices.AddRange(parsedNotes.Reverse());
+        choices.AddRange(parsedNotes);
 
         var select_note_prompt = new SelectionPrompt<string>()
             .Title("[yellow]Select a note to [deeppink3]edit[/][/]")
-            .AddChoices(choices.ToArray())
+            .AddChoices(choices)
             .HighlightStyle(new Style(Color.DeepPink3));
 
         select_note_prompt.DisabledStyle = new Style(Color.Yellow);
@@ -665,6 +663,11 @@ public class Program
         }
 
         int note_index = Convert.ToInt32(selected_option.Substring(0, selected_option.IndexOf(".")));
-        return note_index - 1;
+        
+        // Notes were reversed earlier in the function, so the index needs to be reversed back
+        if (NotesOrderNewestFirst)
+            return Notes.Count - (note_index - 1);
+        else
+            return note_index - 1;
     }
 }
