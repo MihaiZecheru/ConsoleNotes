@@ -8,7 +8,7 @@ Display Order
 Create Backups
 	- If true, a backup of notes.txt will be created
 
-DateDayFirst
+Date Format
 	- If true, the date format used is dd/MM/yyyy, otherwise, it's MM/dd/yyyy
 
 Color1, Color2, Color3, Color4, Color5, Color6, Color7, Color8, Color9, Color0
