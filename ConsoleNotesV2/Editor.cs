@@ -330,8 +330,7 @@ internal class Editor
             // If the above are true, move the cursor to just outside the closing tag [/]
             if (keyinfo.Key == ConsoleKey.Tab)
             {
-                this.Tab();
-                continue;
+                if (this.Tab()) continue;
             }
 
             /***
@@ -1605,7 +1604,8 @@ internal class Editor
     /// <summary>
     /// Tab key - special check - Move the cursor just outside the closing markup tag [/] if the cursor was between a set of markup tags when Tab was pressed
     /// </summary>
-    private void Tab()
+    /// <returns>A success value indicating whether the cursor was between a set of markup tags</returns>
+    private bool Tab()
     {
         // Check if the key was TAB and if the cursor is within a set of markup tags [italic]cursor here[/],
         // move the cursor to just outside the closing tag [/]
@@ -1614,7 +1614,7 @@ internal class Editor
         // If the [/] (closing tag) is closer than the opening tag, the 'ci' must be inside the markup
         string search_range = new string(lines[cli].GetRange(ci, lines[cli].Count - ci).ToArray())!;
 
-        if (!search_range.Contains("[/]")) return;
+        if (!search_range.Contains("[/]")) return false;
         bool jump_to_tag_end = true;
 
         // Check if the search_range also contains an opening tag
@@ -1634,7 +1634,9 @@ internal class Editor
             // Move the cursor to just outside the closing tag
             ci += search_range.IndexOf("[/]") + 3;
             Console.CursorLeft = ci;
-            return;
+            return true;
         }
+
+        return false;
     }
 }
