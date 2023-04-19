@@ -1,0 +1,56 @@
+While in ViewMode
+	- DownArrow: Move displayed notes range down
+	- UpArrow: Move displayed notes range up
+	- R: Reverse the order the notes are displayed in - oldest first or newest first
+	- Q: Move view range to the very top (home)
+	- A: Move view range to the very end
+	- H: Set help mode (open the help menu)
+	- S: Set EditSettings mode
+	- V: Set ViewNotes mode
+	- N: Set NewNote mode
+	- D: Set DeleteNote mode
+	- E: Set EditNote mode
+
+While in EditNote mode or NewNote mode
+	- Ctrl+S: Save note
+	- Ctrl+Q: Quit without saving
+	- Ctrl+J: Toggle JSON-Only mode
+	- Ctrl+Z: Undo
+	- Ctrl+Y: Redo
+	- Enter: New line
+	- Tab: Indent
+	- Home: Move to beginning of line
+	- End: Move to end of line
+	- Ctrl+H: Move to beginning of text
+	- Ctrl+E: Move to end of text
+	- Ctrl+LeftArrow: Move to beginning of word
+	- Ctrl+RightArrow: Move to end of word
+	- Ctrl+UpArrow: Move to beginning of text
+	- Ctrl+DownArrow: Move to end of text
+	- LeftArrow: Move left one character
+	- RightArrow: Move right one character
+	- UpArrow: Move up one line
+	- DownArrow: Move down one line
+	- Ctrl+Backspace: Delete word (left)
+	- Ctrl+Delete: Delete word (right)
+	- Backspace: Delete character (left)
+	- Delete: Delete character (right)
+	- Ctrl+K: Delete line// TODO:
+	- Ctrl+/: Add closing markup tag
+	- Feature: Pressing [, (, or { will automatically add the closing tag
+	- Ctrl+I: Insert italics markup
+	- Ctrl+B: Insert bold markup
+	- Ctrl+Shift+B: Insert blink markup
+	- Ctrl+U: Insert underline markup
+	- Ctrl+Shift+5: Insert strikethrough markup
+	- Ctrl+Shift+D: Insert dim markup
+	- Ctrl+1: User color 1
+	- Ctrl+2: User color 2
+	- Ctrl+3: User color 3
+	- Ctrl+4: User color 4
+	- Ctrl+5: User color 5
+	- Ctrl+6: User color 6
+	- Ctrl+7: User color 7
+	- Ctrl+8: User color 8
+	- Ctrl+9: User color 9
+	- Ctrl+0: User color 10
