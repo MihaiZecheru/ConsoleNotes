@@ -153,8 +153,12 @@ public class Note
     {
         (Panel noteAsPanel, Color color) = GetAsPanel();
 
+        // Get date
+        DateTime datestamp = DateTime.ParseExact(CreatedAt, "dd/MM/yyyy HH:mm:ss", null);
+        string date = Program.Settings.DateDayFirst ? datestamp.ToString("dd/MM/yyyy HH:mm:ss") : datestamp.ToString("MM/dd/yyyy HH:mm:ss");
+
         // Header rule
-        Rule dateDisplay = new Rule(CreatedAt);
+        Rule dateDisplay = new Rule(date);
         dateDisplay.Style = new Style(color);
 
         // Display the note
