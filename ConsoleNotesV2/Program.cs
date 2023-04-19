@@ -481,6 +481,7 @@ public class Program
         else if (mode == Mode.EditNote)
         {
             int selected_note_index = GetSelectedNoteIndex();
+            if (selected_note_index == -1) return;
             Note selected_note = Notes[selected_note_index];
 
             while (true)
@@ -522,6 +523,32 @@ public class Program
             }
 
             UpdateMode(Mode.ViewNotes);
+        }
+        else if (mode == Mode.DeleteNote)
+        {
+            int selected_note_index = GetSelectedNoteIndex();
+            if (selected_note_index == -1) return;
+
+            // Show preview of selected note
+
+
+            var confirmation_prompt = new SelectionPrompt<string>()
+                .Title($"[yellow]Are you sure you want to delete note [deeppink3]#{selected_note_index}[/]?[/]")
+                .AddChoices(new[] { "Yes", "No" })
+                .HighlightStyle(new Style(Color.DeepPink3));
+
+            confirmation_prompt.DisabledStyle = new Style(Color.Yellow);
+            bool delete = AnsiConsole.Prompt(confirmation_prompt) == "Yes";
+
+            if (!delete)
+            {
+                UpdateMode(Mode.ViewNotes);
+            }
+            else
+            {
+                DeleteNote(selected_note_index);
+                UpdateMode(Mode.ViewNotes);
+            }
         }
     }
 
@@ -584,6 +611,8 @@ public class Program
     public static void DeleteNote(int note_index)
     {
         Notes.RemoveAt(note_index);
+        /* Set range to show from beginning */
+        displayRange = new NotesRange((Notes.Count - (displayRangeCount + 1) > 0) ? Notes.Count - (displayRangeCount + 1) : 0, Notes.Count - 1);
         SaveNotes();
     }
 
@@ -603,22 +632,38 @@ public class Program
     /// </summary>
     private static int GetSelectedNoteIndex()
     {
-        string[] choices = Notes.Select((note, index) =>
+        List<string> choices = new List<string>() { "Quit" };
+        IEnumerable<string> parsedNotes = Notes.Select((note, index) =>
         {
+            string date = note.CreatedAt;
+            string date_only = date.Substring(0, date.IndexOf(' '));
+
             if (note.Title == Note.EmptyTitle)
-                return $"{index + 1}. <No Title> | {note.CreatedAt}";
+                return $"{index + 1}. {date_only} | <No Title>";
             else
-                return $"{index + 1}. {note.Title} | {note.CreatedAt}";
-        }).ToArray();
+                return $"{index + 1}. {date_only} | {note.Title}";
+        });
+
+        // Have newest at the bottom like how it is in Mode.ViewNotes
+        if (NotesOrderNewestFirst)
+            choices.AddRange(parsedNotes);
+        else // Have newest at the top (Mode.ViewNotes)
+            choices.AddRange(parsedNotes.Reverse());
 
         var select_note_prompt = new SelectionPrompt<string>()
-                .Title("[yellow]Select a note to [deeppink3]edit[/][/]")
-                .AddChoices(choices)
-                .HighlightStyle(new Style(Color.DeepPink3));
+            .Title("[yellow]Select a note to [deeppink3]edit[/][/]")
+            .AddChoices(choices.ToArray())
+            .HighlightStyle(new Style(Color.DeepPink3));
 
         select_note_prompt.DisabledStyle = new Style(Color.Yellow);
         string selected_option = AnsiConsole.Prompt(select_note_prompt);
         
+        if (selected_option == "Quit")
+        {
+            UpdateMode(Mode.ViewNotes);
+            return -1;
+        }
+
         int note_index = Convert.ToInt32(selected_option.Substring(0, selected_option.IndexOf(".")));
         return note_index - 1;
     }
