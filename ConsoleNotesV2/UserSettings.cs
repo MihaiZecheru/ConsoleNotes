@@ -9,19 +9,74 @@ public class UserSettings
     /// </summary>
     private bool constructing = false;
 
+    /// <summary>
+    /// Make the notes in Mode.ViewNotes be displayed in a rainbow pattern
+    /// </summary>
     private bool showRainbowNotes;
+
+    /// <summary>
+    /// If true, the most recently written notes will be displayed first in Mode.ViewNotes
+    /// </summary>
     private bool notesDisplayOrder_NewestFirst;
+
+    /// <summary>
+    /// Create backups of the notes.txt file
+    /// </summary>
     private bool createBackups;
+
+    /// <summary>
+    /// If true, the date will be displayed as DD/MM/YYYY. If false, it will be displayed as MM/DD/YYYY
+    /// </summary>
     private bool dateDayFirst;
+
+    /// <summary>
+    /// Custom color to be inserted as markup when the user presses Ctrl+1 while writing/editing a note
+    /// </summary>
     private string color1;
+
+    /// <summary>
+    /// Custom color to be inserted as markup when the user presses Ctrl+2 while writing/editing a note
+    /// </summary>
     private string color2;
+    
+    /// <summary>
+    /// Custom color to be inserted as markup when the user presses Ctrl+3 while writing/editing a note
+    /// </summary>
     private string color3;
+    
+    /// <summary>
+    /// Custom color to be inserted as markup when the user presses Ctrl+4 while writing/editing a note
+    /// </summary>
     private string color4;
+    
+    /// <summary>
+    /// Custom color to be inserted as markup when the user presses Ctrl+5 while writing/editing a note
+    /// </summary>
     private string color5;
+    
+    /// <summary>
+    /// Custom color to be inserted as markup when the user presses Ctrl+6 while writing/editing a note
+    /// </summary>
     private string color6;
+    
+    /// <summary>
+    /// Custom color to be inserted as markup when the user presses Ctrl+7 while writing/editing a note
+    /// </summary>
     private string color7;
+    
+    /// <summary>
+    /// Custom color to be inserted as markup when the user presses Ctrl+8 while writing/editing a note
+    /// </summary>
     private string color8;
+    
+    /// <summary>
+    /// Custom color to be inserted as markup when the user presses Ctrl+9 while writing/editing a note
+    /// </summary>
     private string color9;
+    
+    /// <summary>
+    /// Custom color to be inserted as markup when the user presses Ctrl+0 while writing/editing a note
+    /// </summary>
     private string color0;
 
     public bool ShowRainbowNotes {
@@ -137,8 +192,14 @@ public class UserSettings
         }
     }
 
+    /// <summary>
+    /// The path to the settings.txt file
+    /// </summary>
     public static string SettingsFilePath { get; } = @"C:\ConsoleNotes\settings.txt";
 
+    /// <summary>
+    /// Parse the settings.txt file and set the object's properties to the values in the file
+    /// </summary>
     public UserSettings()
     {
         constructing = true;
@@ -175,6 +236,10 @@ public class UserSettings
         constructing = true;
     }
 
+    /// <summary>
+    /// Format the object for saving to the settings.txt file
+    /// </summary>
+    /// <returns>A string to write to the settings.txt file</returns>
     public override string ToString()
     {
         return $"ShowRainbowNotes={ShowRainbowNotes}\n" +
@@ -193,12 +258,18 @@ public class UserSettings
                $"Color0={Color0}";
     }
 
+    /// <summary>
+    /// Save the settings to the settings.txt file
+    /// </summary>
     public void SaveSettings()
     {
         if (!constructing)
             File.WriteAllText(SettingsFilePath, this.ToString());
     }
 
+    /// <summary>
+    /// Create a settings.txt file with default settings
+    /// </summary>
     private void CreateFileWithDefaultSettings()
     {
         constructing = true;
