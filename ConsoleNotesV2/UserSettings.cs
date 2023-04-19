@@ -233,7 +233,7 @@ public class UserSettings
             CreateFileWithDefaultSettings();
         }
 
-        constructing = true;
+        constructing = false;
     }
 
     /// <summary>
@@ -242,6 +242,7 @@ public class UserSettings
     /// <returns>A string to write to the settings.txt file</returns>
     public override string ToString()
     {
+        Console.WriteLine("asdjkhasjdhasjdasjdhjasdjkasdh");
         return $"ShowRainbowNotes={ShowRainbowNotes}\n" +
                $"NotesDisplayOrder_OldestFirst={NotesDisplayOrder_NewestFirst}\n" +
                $"CreateBackups={CreateBackups}\n" +
