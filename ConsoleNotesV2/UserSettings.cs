@@ -12,6 +12,7 @@ public class UserSettings
     private bool showRainbowNotes;
     private bool notesDisplayOrder_NewestFirst;
     private bool createBackups;
+    private bool dateDayFirst;
     private string color1;
     private string color2;
     private string color3;
@@ -43,6 +44,15 @@ public class UserSettings
         get => createBackups;
         set {
             createBackups = value;
+            SaveSettings();
+        }
+    }
+    public bool DateDayFirst
+    {
+        get => dateDayFirst;
+        set
+        {
+            dateDayFirst = value;
             SaveSettings();
         }
     }
@@ -142,19 +152,20 @@ public class UserSettings
             ShowRainbowNotes = Convert.ToBoolean(lines[0].Split('=')[1]);
             NotesDisplayOrder_NewestFirst = Convert.ToBoolean(lines[1].Split('=')[1]);
             CreateBackups = Convert.ToBoolean(lines[2].Split('=')[1]);
+            DateDayFirst = Convert.ToBoolean(lines[3].Split('=')[1]);
 
             // Each color looks like this in the file: Color{i}=hex
 
-            Color1 = lines[3].Split('=')[1];
-            Color2 = lines[4].Split('=')[1];
-            Color3 = lines[5].Split('=')[1];
-            Color4 = lines[6].Split('=')[1];
-            Color5 = lines[7].Split('=')[1];
-            Color6 = lines[8].Split('=')[1];
-            Color7 = lines[9].Split('=')[1];
-            Color8 = lines[10].Split('=')[1];
-            Color9 = lines[11].Split('=')[1];
-            Color0 = lines[12].Split('=')[1];
+            Color1 = lines[4].Split('=')[1];
+            Color2 = lines[5].Split('=')[1];
+            Color3 = lines[6].Split('=')[1];
+            Color4 = lines[7].Split('=')[1];
+            Color5 = lines[8].Split('=')[1];
+            Color6 = lines[9].Split('=')[1];
+            Color7 = lines[10].Split('=')[1];
+            Color8 = lines[11].Split('=')[1];
+            Color9 = lines[12].Split('=')[1];
+            Color0 = lines[13].Split('=')[1];
         }
         else
         {
@@ -169,6 +180,7 @@ public class UserSettings
         return $"ShowRainbowNotes={ShowRainbowNotes}\n" +
                $"NotesDisplayOrder_OldestFirst={NotesDisplayOrder_NewestFirst}\n" +
                $"CreateBackups={CreateBackups}\n" +
+               $"DateDayFirst={DateDayFirst}\n" +
                $"Color1={Color1}\n" +
                $"Color2={Color2}\n" +
                $"Color3={Color3}\n" +
@@ -195,6 +207,7 @@ public class UserSettings
         ShowRainbowNotes = DefaultSettings.ShowRainbowNotes;
         NotesDisplayOrder_NewestFirst = DefaultSettings.NotesDisplayOrder_NewestFirst;
         CreateBackups = DefaultSettings.CreateBackups;
+        DateDayFirst = DefaultSettings.DateDayFirst;
         Color1 = DefaultSettings.Color1;
         Color2 = DefaultSettings.Color2;
         Color3 = DefaultSettings.Color3;
