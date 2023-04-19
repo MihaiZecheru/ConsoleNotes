@@ -55,6 +55,13 @@ internal class Editor
     private bool isJson = false;
 
     /// <summary>
+    /// If an existing note is being edited, this will be false
+    /// <br/><br/>
+    /// If a new note is being created, this will be true
+    /// </summary>
+    private bool editing_existing_note = false;
+
+    /// <summary>
     /// Concatenate the note
     /// </summary>
     /// <param name="start">The index of the line to start concatenating from</param>
@@ -80,6 +87,35 @@ internal class Editor
     /// Call editor.Mainloop() to activate the editor
     /// </summary>
     public Editor() { }
+
+    public Editor(Note existing_note)
+    {
+        this.editing_existing_note = true;
+        this.isJson = existing_note.IsJson;
+        
+        // Split the note into lines
+        string[] lines = existing_note.Body.Split('\n');
+
+        // Add each line to the note
+        this.lines.Clear();
+        for (int i = 0; i < lines.Length; i++)
+        {
+            this.lines.Add(lines[i].ToList());
+        }
+
+        // Set to last line
+        this.cli = this.lines.Count - 1;
+        
+        // Set to last character in last line
+        this.ci = this.lines[this.cli].Count;
+
+        // Save the current state as the first state
+        this.states.AddState(this.lines, Tuple.Create(ci, cli));
+        this.states.RemoveAt(0);
+
+        // Print the note
+        Console.Write(existing_note.Body);
+    }
 
     /// <summary>
     /// Start the editor in the console and allow the user to edit / make their note
@@ -489,13 +525,13 @@ internal class Editor
         {
             // Disable JSON-Only
             isJson = false;
-            header_text = "Write A New Note";
+            header_text = this.editing_existing_note ? "Edit Note" : "Write A New Note";
         }
         else
         {
             // Enable JSON-Only
             isJson = true;
-            header_text = "Write A New Note - JSON Only";
+            header_text = this.editing_existing_note ? "Edit Note - JSON Only" : "Write A New Note - JSON Only";
         }
 
         // Remember cursor position
@@ -528,7 +564,10 @@ internal class Editor
         Console.Clear();
 
         // Rewrite the horizontal rule
-        string rule_header = isJson ? "Write A New Note - JSON Only" : "Write A New Note";
+        string rule_header;
+        if (isJson) rule_header = this.editing_existing_note ? "Edit Note - JSON Only" : "Write A New Note - JSON Only";
+        else rule_header = this.editing_existing_note ? "Edit Note" : "Write A New Note";
+
         var rule = new Spectre.Console.Rule($"[deeppink3]{rule_header}[/]");
         rule.Style = new Style(Color.Yellow);
         AnsiConsole.Write(rule);
@@ -559,7 +598,11 @@ internal class Editor
         Console.Clear();
 
         // Rewrite the horizontal rule
-        var rule = new Spectre.Console.Rule("[deeppink3]Write A New Note[/]");
+        string rule_header;
+        if (isJson) rule_header = this.editing_existing_note ? "Edit Note - JSON Only" : "Write A New Note - JSON Only";
+        else rule_header = this.editing_existing_note ? "Edit Note" : "Write A New Note";
+
+        var rule = new Spectre.Console.Rule($"[deeppink3]{rule_header}[/]");
         rule.Style = new Style(Color.Yellow);
         AnsiConsole.Write(rule);
 

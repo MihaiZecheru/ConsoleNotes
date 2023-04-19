@@ -148,7 +148,7 @@ public class Program
                     change_made = true;
                 }
             }
-            
+
             if (change_made)
             {
                 Update();
@@ -214,6 +214,9 @@ public class Program
         }
     };
 
+    /// <summary>
+    /// update the screen
+    /// </summary>
     public static void Update()
     {
         Console.Clear();
@@ -477,7 +480,7 @@ public class Program
         }
         else if (mode == Mode.EditNote)
         {
-            int selected_note_index = 0;
+            int selected_note_index = GetSelectedNoteIndex();
             Note selected_note = Notes[selected_note_index];
 
             while (true)
@@ -487,19 +490,21 @@ public class Program
                 AnsiConsole.Write(rule);
 
                 var what_to_edit_prompt = new SelectionPrompt<string>()
-                    .Title("[yellow]Choose a field to [deeppink3]edit[/]?[/]")
-                    .AddChoices(new[] { "Title", "Body", "Quit" })
+                    .Title("[yellow]Choose a field to [deeppink3]edit[/][/]")
+                    .AddChoices(new[] { "Quit", "Title", "Body" })
                     .HighlightStyle(new Style(Color.DeepPink3));
 
                 what_to_edit_prompt.DisabledStyle = new Style(Color.Yellow);
                 var answer = AnsiConsole.Prompt(what_to_edit_prompt);
 
-                Console.Clear();
                 if (answer == "Title")
                 {
-                    Console.WriteLine($"Current Title: {selected_note.Title}\n");
+                    Console.Clear();
+                    string old_title = selected_note.Title == Note.EmptyTitle ? "<No Title>" : selected_note.Title;
+                    AnsiConsole.Write(new Markup($"[deeppink3]Current Title:[/] [yellow]{old_title}[/]\n\n"));
 
-                    string new_title = AnsiConsole.Ask<string>("[yellow]Give your [deeppink3]note[/] a new title:[/]");
+                    string new_title = AnsiConsole.Ask<string>("[yellow]Give your [deeppink3]note[/] a new title[/]", "press enter to remove title");
+                    if (new_title == "press enter to remove title") new_title = Note.EmptyTitle;
                     EditNote(selected_note_index, new Note(new_title, selected_note.Body, selected_note.IsJson));
                 }
                 else if (answer == "Body")
@@ -510,25 +515,39 @@ public class Program
 
                     if (!user_finished_editing_note) break;
                     EditNote(selected_note_index, new Note(selected_note.Title, updated_note_body, _isJson));
+                    break;
                 }
                 else break;
                 Console.Clear();
             }
+
+            UpdateMode(Mode.ViewNotes);
         }
     }
 
+    /// <summary>
+    /// Change the value of <see cref="mode"/>
+    /// </summary>
+    /// <param name="m"></param>
     internal static void UpdateMode(Mode m)
     {
         mode = m;
         Update();
     }
 
+    /// <summary>
+    /// Save all notes to the notes.txt file
+    /// </summary>
     public static void SaveNotes()
     {
         string notes = string.Join(Note.NoteSeparator, Notes) + Note.NoteSeparator;
         File.WriteAllText(@"C:\ConsoleNotes\notes.txt", notes);
     }
 
+    /// <summary>
+    /// Create a new note, add it to <see cref="Notes"/>, then save to file
+    /// </summary>
+    /// <param name="title">The title of the note</param>
     public static void CreateNote(string title)
     {
         KeyEventListenerPaused = true;
@@ -558,15 +577,49 @@ public class Program
         KeyEventListenerPaused = false;
     }
 
-    public static void DeleteNote(Note note)
+    /// <summary>
+    /// Delete an existing note
+    /// </summary>
+    /// <param name="note_index">The index of the note to delete in the <see cref="Notes"/> list</param>
+    public static void DeleteNote(int note_index)
     {
-        Notes.RemoveAt(Notes.IndexOf(note));
+        Notes.RemoveAt(note_index);
         SaveNotes();
     }
 
+    /// <summary>
+    /// Edit an existing note then save to file
+    /// </summary>
+    /// <param name="original_note_index">The index of the original note in the <see cref="Notes"/> list</param>
+    /// <param name="newNote">The note to replace the original with</param>
     public static void EditNote(int original_note_index, Note newNote)
     {
         Notes[original_note_index] = newNote;
         SaveNotes();
+    }
+
+    /// <summary>
+    /// Have the user select a note then return the index of that note in the <see cref="Notes"/> list
+    /// </summary>
+    private static int GetSelectedNoteIndex()
+    {
+        string[] choices = Notes.Select((note, index) =>
+        {
+            if (note.Title == Note.EmptyTitle)
+                return $"{index + 1}. <No Title> | {note.CreatedAt}";
+            else
+                return $"{index + 1}. {note.Title} | {note.CreatedAt}";
+        }).ToArray();
+
+        var select_note_prompt = new SelectionPrompt<string>()
+                .Title("[yellow]Select a note to [deeppink3]edit[/][/]")
+                .AddChoices(choices)
+                .HighlightStyle(new Style(Color.DeepPink3));
+
+        select_note_prompt.DisabledStyle = new Style(Color.Yellow);
+        string selected_option = AnsiConsole.Prompt(select_note_prompt);
+        
+        int note_index = Convert.ToInt32(selected_option.Substring(0, selected_option.IndexOf(".")));
+        return note_index - 1;
     }
 }
