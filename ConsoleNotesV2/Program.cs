@@ -68,9 +68,6 @@ public class Program
             ConsoleKey.R,
             
             // Move view range to the very top (home, beginning of the list, index 0)
-            ConsoleKey.H,
-            
-            // Move view range to the very top (home, beginning of the list, index 0)
             ConsoleKey.Q,
             
             // Move view range to the very bottom (end, end of the list)
@@ -285,7 +282,6 @@ public class Program
                 Console.SetCursorPosition(0, 1);
             }
 
-            new Editor();
             CreateNote(title);
         }
         else if (mode == Mode.EditSettings)
@@ -311,6 +307,16 @@ public class Program
             // Backups
             Console.WriteLine($"Create Backups:\t\t{Settings.CreateBackups}\n");
 
+            // Date Format
+            if (Settings.DateDayFirst)
+            {
+                Console.WriteLine("Date Format:\t\tDD/MM/YYYY");
+            }
+            else
+            {
+                Console.WriteLine("Date Format:\t\tMM/DD/YYYY");
+            }
+
             // Colors
             Console.WriteLine($"Color1: #{Settings.Color1}\t\tColor6: #{Settings.Color6}");
             Console.WriteLine($"Color2: #{Settings.Color2}\t\tColor7: #{Settings.Color7}");
@@ -331,6 +337,7 @@ public class Program
                     "Show Rainbow Notes",
                     "Display Order",
                     "Create Backups",
+                    "Date Format",
                     "Color1", "Color2", "Color3",
                     "Color4", "Color5", "Color6",
                     "Color7", "Color8", "Color9", "Color0",
@@ -382,9 +389,9 @@ public class Program
 
                 case "Display Order":
                     var display_order_new_value_prompt = new SelectionPrompt<string>()
-                    .Title("[yellow]Set new value for: [deeppink3]Display Order[/][/]")
-                    .AddChoices(new[] { "Newest First", "Oldest First" })
-                    .HighlightStyle(new Style(Color.DeepPink3));
+                        .Title("[yellow]Set new value for: [deeppink3]Display Order[/][/]")
+                        .AddChoices(new[] { "Newest First", "Oldest First" })
+                        .HighlightStyle(new Style(Color.DeepPink3));
 
                     display_order_new_value_prompt.DisabledStyle = new Style(Color.Yellow);
                     Settings.NotesDisplayOrder_NewestFirst = AnsiConsole.Prompt(display_order_new_value_prompt) == "Newest First";
@@ -392,6 +399,16 @@ public class Program
 
                 case "Create Backups":
                     Settings.CreateBackups = AskUserTrueOrFalse("Create Backups");
+                    break;
+
+                case "Date Format":
+                    var date_day_first_new_value_prompt = new SelectionPrompt<string>()
+                        .Title("[yellow]Set new value for: [deeppink3]Date Format[/][/]")
+                        .AddChoices(new[] { "MM/DD/YYYY", "DD/MM/YYYY" })
+                        .HighlightStyle(new Style(Color.DeepPink3));
+
+                    date_day_first_new_value_prompt.DisabledStyle = new Style(Color.Yellow);
+                    Settings.DateDayFirst = AnsiConsole.Prompt(date_day_first_new_value_prompt) == "DD/MM/YYYY";
                     break;
 
                 case "Color1":
@@ -458,6 +475,46 @@ public class Program
             // Refresh to show changes
             Update();
         }
+        else if (mode == Mode.EditNote)
+        {
+            int selected_note_index = 0;
+            Note selected_note = Notes[selected_note_index];
+
+            while (true)
+            {
+                var rule = new Spectre.Console.Rule("[deeppink3]Edit Note[/]");
+                rule.Style = new Style(Color.Yellow);
+                AnsiConsole.Write(rule);
+
+                var what_to_edit_prompt = new SelectionPrompt<string>()
+                    .Title("[yellow]Choose a field to [deeppink3]edit[/]?[/]")
+                    .AddChoices(new[] { "Title", "Body", "Quit" })
+                    .HighlightStyle(new Style(Color.DeepPink3));
+
+                what_to_edit_prompt.DisabledStyle = new Style(Color.Yellow);
+                var answer = AnsiConsole.Prompt(what_to_edit_prompt);
+
+                Console.Clear();
+                if (answer == "Title")
+                {
+                    Console.WriteLine($"Current Title: {selected_note.Title}\n");
+
+                    string new_title = AnsiConsole.Ask<string>("[yellow]Give your [deeppink3]note[/] a new title:[/]");
+                    EditNote(selected_note_index, new Note(new_title, selected_note.Body, selected_note.IsJson));
+                }
+                else if (answer == "Body")
+                {
+                    bool _isJson = selected_note.IsJson;
+                    string updated_note_body = string.Empty;
+                    bool user_finished_editing_note = new Editor(selected_note).MainLoop(ref updated_note_body, ref _isJson);
+
+                    if (!user_finished_editing_note) break;
+                    EditNote(selected_note_index, new Note(selected_note.Title, updated_note_body, _isJson));
+                }
+                else break;
+                Console.Clear();
+            }
+        }
     }
 
     internal static void UpdateMode(Mode m)
@@ -507,9 +564,9 @@ public class Program
         SaveNotes();
     }
 
-    public static void EditNote(Note note, Note newNote)
+    public static void EditNote(int original_note_index, Note newNote)
     {
-        Notes[Notes.IndexOf(note)] = newNote;
+        Notes[original_note_index] = newNote;
         SaveNotes();
     }
 }
