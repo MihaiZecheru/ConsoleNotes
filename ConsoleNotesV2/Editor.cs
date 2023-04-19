@@ -249,6 +249,11 @@ internal class Editor
                     continue;
                 }
             }
+            // Ctrl+Q: quit without saving
+            else if (keyinfo.Key == ConsoleKey.Q && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control))
+            {
+                return false;
+            }
             /***
              * Markup keybinds
              ***/
@@ -277,10 +282,7 @@ internal class Editor
             /*** Done with main checks ***/
 
             // Check if the key event was 'Alt+V', the keybind for returning to the 'view' menu
-            if (keyinfo.Key == ConsoleKey.V && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Alt))
-            {
-                return false;
-            }
+            if (keyinfo.Key == ConsoleKey.V && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Alt)) return false;
 
             // Check if the key was TAB and if the cursor is within a set of markup tags [italic]cursor here[/]
             // If the above are true, move the cursor to just outside the closing tag [/]
