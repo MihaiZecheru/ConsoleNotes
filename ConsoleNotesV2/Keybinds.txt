@@ -35,7 +35,7 @@ While in EditNote mode or NewNote mode
 	- Ctrl+Delete: Delete word (right)
 	- Backspace: Delete character (left)
 	- Delete: Delete character (right)
-	- Ctrl+K: Delete line// TODO:
+	- Ctrl+Shift+K: Delete line
 	- Ctrl+/: Add closing markup tag
 	- Feature: Pressing [, (, or { will automatically add the closing tag
 	- Ctrl+I: Insert italics markup
