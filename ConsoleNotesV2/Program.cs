@@ -6,12 +6,39 @@ namespace ConsoleNotes;
 
 public class Program
 {
+    /// <summary>
+    /// User application settings
+    /// </summary>
     public static UserSettings Settings;
+
+    /// <summary>
+    /// User notes
+    /// </summary>
     private static List<Note> Notes;
+
+    /// <summary>
+    /// The range of notes to display on the screen
+    /// </summary>
     private static NotesRange displayRange;
+
+    /// <summary>
+    /// The size fo the <see cref="displayRange"/>
+    /// </summary>
     private static int displayRangeCount = 10;
+
+    /// <summary>
+    /// Display most recently-written notes first
+    /// </summary>
     private static bool NotesOrderNewestFirst = true;
+
+    /// <summary>
+    /// The current mode the application is in
+    /// </summary>
     private static Mode mode = Mode.ViewNotes;
+
+    /// <summary>
+    /// Is the keyevent listener, which handles changing modes and moving up & down the display range, paused?
+    /// </summary>
     public static bool KeyEventListenerPaused = false;
 
     // MessageBox for throwing exceptions after Ctrl+S (save note) fails due to a markup syntax error
@@ -307,9 +334,6 @@ public class Program
                 Console.WriteLine("Display Order:\t\tOldest First");
             }
 
-            // Backups
-            Console.WriteLine($"Create Backups:\t\t{Settings.CreateBackups}\n");
-
             // Date Format
             if (Settings.DateDayFirst)
             {
@@ -339,7 +363,6 @@ public class Program
                 .AddChoices(new[] {
                     "Show Rainbow Notes",
                     "Display Order",
-                    "Create Backups",
                     "Date Format",
                     "Color1", "Color2", "Color3",
                     "Color4", "Color5", "Color6",
@@ -398,10 +421,6 @@ public class Program
 
                     display_order_new_value_prompt.DisabledStyle = new Style(Color.Yellow);
                     Settings.NotesDisplayOrder_NewestFirst = AnsiConsole.Prompt(display_order_new_value_prompt) == "Newest First";
-                    break;
-
-                case "Create Backups":
-                    Settings.CreateBackups = AskUserTrueOrFalse("Create Backups");
                     break;
 
                 case "Date Format":

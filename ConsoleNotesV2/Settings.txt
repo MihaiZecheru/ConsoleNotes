@@ -5,9 +5,6 @@ Display Order
 	- While on 'Newest First', newer notes will be shown first
 	- While on 'Oldest First', older notes will be shown first
 
-Create Backups
-	- If true, a backup of notes.txt will be created
-
 Date Format
 	- If true, the date format used is dd/MM/yyyy, otherwise, it's MM/dd/yyyy
 

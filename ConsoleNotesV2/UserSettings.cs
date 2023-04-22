@@ -20,11 +20,6 @@ public class UserSettings
     private bool notesDisplayOrder_NewestFirst;
 
     /// <summary>
-    /// Create backups of the notes.txt file
-    /// </summary>
-    private bool createBackups;
-
-    /// <summary>
     /// If true, the date will be displayed as DD/MM/YYYY. If false, it will be displayed as MM/DD/YYYY
     /// </summary>
     private bool dateDayFirst;
@@ -91,14 +86,6 @@ public class UserSettings
         get => notesDisplayOrder_NewestFirst;
         set {
             notesDisplayOrder_NewestFirst = value;
-            SaveSettings();
-        }
-    }
-    public bool CreateBackups
-    {
-        get => createBackups;
-        set {
-            createBackups = value;
             SaveSettings();
         }
     }
@@ -212,7 +199,6 @@ public class UserSettings
             // File follows the same order as the properties up top
             ShowRainbowNotes = Convert.ToBoolean(lines[0].Split('=')[1]);
             NotesDisplayOrder_NewestFirst = Convert.ToBoolean(lines[1].Split('=')[1]);
-            CreateBackups = Convert.ToBoolean(lines[2].Split('=')[1]);
             DateDayFirst = Convert.ToBoolean(lines[3].Split('=')[1]);
 
             // Each color looks like this in the file: Color{i}=hex
@@ -245,7 +231,6 @@ public class UserSettings
         Console.WriteLine("asdjkhasjdhasjdasjdhjasdjkasdh");
         return $"ShowRainbowNotes={ShowRainbowNotes}\n" +
                $"NotesDisplayOrder_OldestFirst={NotesDisplayOrder_NewestFirst}\n" +
-               $"CreateBackups={CreateBackups}\n" +
                $"DateDayFirst={DateDayFirst}\n" +
                $"Color1={Color1}\n" +
                $"Color2={Color2}\n" +
@@ -278,7 +263,6 @@ public class UserSettings
         // Set all settings to default values
         ShowRainbowNotes = DefaultSettings.ShowRainbowNotes;
         NotesDisplayOrder_NewestFirst = DefaultSettings.NotesDisplayOrder_NewestFirst;
-        CreateBackups = DefaultSettings.CreateBackups;
         DateDayFirst = DefaultSettings.DateDayFirst;
         Color1 = DefaultSettings.Color1;
         Color2 = DefaultSettings.Color2;

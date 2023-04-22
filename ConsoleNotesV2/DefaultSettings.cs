@@ -6,7 +6,6 @@ internal static class DefaultSettings
 {
     public static bool ShowRainbowNotes { get; } = true;
     public static bool NotesDisplayOrder_NewestFirst { get; } = true;
-    public static bool CreateBackups { get; } = true;
     public static bool DateDayFirst { get; } = false;
     public static string Color1 { get; } = Color.DeepSkyBlue3_1.ToHex();
     public static string Color2 { get; } = Color.Red.ToHex();
