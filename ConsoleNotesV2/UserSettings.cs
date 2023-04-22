@@ -199,20 +199,20 @@ public class UserSettings
             // File follows the same order as the properties up top
             ShowRainbowNotes = Convert.ToBoolean(lines[0].Split('=')[1]);
             NotesDisplayOrder_NewestFirst = Convert.ToBoolean(lines[1].Split('=')[1]);
-            DateDayFirst = Convert.ToBoolean(lines[3].Split('=')[1]);
+            DateDayFirst = Convert.ToBoolean(lines[2].Split('=')[1]);
 
             // Each color looks like this in the file: Color{i}=hex
 
-            Color1 = lines[4].Split('=')[1];
-            Color2 = lines[5].Split('=')[1];
-            Color3 = lines[6].Split('=')[1];
-            Color4 = lines[7].Split('=')[1];
-            Color5 = lines[8].Split('=')[1];
-            Color6 = lines[9].Split('=')[1];
-            Color7 = lines[10].Split('=')[1];
-            Color8 = lines[11].Split('=')[1];
-            Color9 = lines[12].Split('=')[1];
-            Color0 = lines[13].Split('=')[1];
+            Color1 = lines[3].Split('=')[1];
+            Color2 = lines[4].Split('=')[1];
+            Color3 = lines[5].Split('=')[1];
+            Color4 = lines[6].Split('=')[1];
+            Color5 = lines[7].Split('=')[1];
+            Color6 = lines[8].Split('=')[1];
+            Color7 = lines[9].Split('=')[1];
+            Color8 = lines[10].Split('=')[1];
+            Color9 = lines[11].Split('=')[1];
+            Color0 = lines[12].Split('=')[1];
         }
         else
         {
