@@ -1,6 +1,7 @@
 ﻿using Spectre.Console;
 using System.Text.RegularExpressions;
 using System.Runtime.InteropServices;
+using System.ComponentModel.Design;
 
 namespace ConsoleNotes;
 
@@ -41,20 +42,21 @@ public class Program
     /// </summary>
     public static bool KeyEventListenerPaused = false;
 
+    /// <summary>
+    /// The path to the notes.txt file
+    /// </summary>
+    public static string notesFilePath = @"C:\ConsoleNotes\notes.txt";
+
     // MessageBox for throwing exceptions after Ctrl+S (save note) fails due to a markup syntax error
     [DllImport("User32.dll", CharSet = CharSet.Unicode)]
     public static extern int MessageBox(IntPtr h, string m, string c, int type);
 
     public static void Main()
     {
-        /* Setup notes file */
-        string notesFilepath = @"C:\ConsoleNotes\notes.txt";
-
-
-        if (!File.Exists(notesFilepath))
+        if (!File.Exists(notesFilePath))
         {
             Directory.CreateDirectory(@"C:\ConsoleNotes");
-            File.Create(notesFilepath);
+            File.Create(notesFilePath);
         }
 
         /* Get settings from file */
@@ -67,7 +69,7 @@ public class Program
         AnsiConsole.Write(new FigletText("ConsoleNotes").Centered().Color(ConsoleColor.DarkCyan));
 
         /* Load notes */
-        string notes = File.ReadAllText(notesFilepath);
+        string notes = File.ReadAllText(notesFilePath);
         List<string> raw_notes = notes.Split(Note.NoteSeparator).ToList();
         if (raw_notes[raw_notes.Count - 1].Length == 0)
             raw_notes.RemoveAt(raw_notes.Count - 1);
@@ -247,26 +249,12 @@ public class Program
     public static void Update()
     {
         Console.Clear();
+        Console.Write("\x1b[3J");
 
         if (mode == Mode.ViewNotes)
         {
             // Hide cursor
             Console.CursorVisible = false;
-
-            /***
-             * If the user is using Windows Terminal instead of powershell or a command prompt,
-             * a bug appears with the display text. When clearing the screen to rewrite the notes (using the new displayRange),
-             * the console still remains scrollable so that the user can scroll up and see the old range that should have been deleted.
-             * 
-             * I found this trick that works in detecting the terminal used - the Console.Title doesn't show for the Window Terminal
-             * as the title is usually set to the CD
-             ***/
-            if (Console.Title != "Console Notes")
-            {
-                // This character will clear the scroll of the terminal
-                Console.Write("\x1b[3J");
-                Console.SetCursorPosition(0, 0);
-            }
 
             if (Notes.Count == 0)
             {
@@ -305,7 +293,7 @@ public class Program
             if (add_title)
             {
                 title = AnsiConsole.Ask<string>("[yellow]Title your [deeppink3]note[/]:[/]");
-                
+
                 // Clear the screen
                 Console.SetCursorPosition(0, 1);
                 Console.Write(new string(' ', title.Length + 17));
@@ -323,7 +311,7 @@ public class Program
 
             // Rainbow notes
             Console.WriteLine($"Show Rainbow Notes:\t{Settings.ShowRainbowNotes}");
-            
+
             // Display order
             if (Settings.NotesDisplayOrder_NewestFirst)
             {
@@ -435,7 +423,7 @@ public class Program
 
                 case "Color1":
                     hex = ChangeColorTo(1);
-                    if (hex== string.Empty) Update();
+                    if (hex == string.Empty) Update();
                     Settings.Color1 = hex;
                     break;
 
@@ -549,7 +537,7 @@ public class Program
             if (selected_note_index == -1) return;
             Note selected_note = Notes[selected_note_index];
             /** Show preview of selected note **/
-            
+
             // Move past where the prompt will appear
             Console.SetCursorPosition(0, 5);
 
@@ -578,6 +566,21 @@ public class Program
                 UpdateMode(Mode.ViewNotes);
             }
         }
+        else if (mode == Mode.Help)
+        {
+            var settingsRule = new Rule("Settings Help");
+            settingsRule.Style = new Style(Color.DeepPink3);
+            
+            var keybindsRule = new Rule("Keybinds Help");
+            keybindsRule.Style = new Style(Color.DeepPink3);
+
+            AnsiConsole.Write(settingsRule);
+            AnsiConsole.Write(new Markup("[yellow]" + Markup.Escape(File.ReadAllText("./Settings.txt")) + "[/]\n\n"));
+
+            AnsiConsole.Write(keybindsRule);
+            AnsiConsole.Write(new Markup("[yellow]" + Markup.Escape(File.ReadAllText("./Keybinds.txt")) + "[/]"));
+            Console.SetCursorPosition(0, 0);
+        }
     }
 
     /// <summary>
@@ -596,7 +599,7 @@ public class Program
     public static void SaveNotes()
     {
         string notes = string.Join(Note.NoteSeparator, Notes) + Note.NoteSeparator;
-        File.WriteAllText(@"C:\ConsoleNotes\notes.txt", notes);
+        File.WriteAllText(notesFilePath, notes);
     }
 
     /// <summary>
