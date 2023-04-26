@@ -139,6 +139,8 @@ internal class Editor
                     _isJson = this.isJson;
                     return true;
                 }
+
+                continue;
             }
             // Toggle JSON-Only
             else if (keyinfo.Key == ConsoleKey.J && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control))
