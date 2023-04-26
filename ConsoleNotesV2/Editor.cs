@@ -488,7 +488,7 @@ internal class Editor
         {
             if (isJson)
             {
-                int result = Program.MessageBox((IntPtr)0, $"Check your JSON for any erros. There might be a comma or other character in the wrong place. " +
+                int result = Program.MessageBox((IntPtr)0, $"Check your JSON for any errors. There might be a comma or other character in the wrong place. " +
                     $"\n\nError: {e.Message}" +
                     $"\n\nDo you want to open a JSON validator in your browser? Your note will be copied to clipboard.",
                 "JSON Syntax Error", 4);
