@@ -62,10 +62,10 @@ internal class Editor
     private bool editing_existing_note = false;
 
     /// <summary>
-    /// Concatenate the note
+    /// Concatenate the note into a single string
     /// </summary>
     /// <param name="start">The index of the line to start concatenating from</param>
-    /// <returns>The concatenated note which includes all lines from [start, lines.Count - 1], </returns>
+    /// <returns>The concatenated note which includes all lines from [start, lines.Count - 1]</returns>
     private string GetNoteContent(int start)
     {
         string s = string.Empty;
@@ -88,6 +88,12 @@ internal class Editor
     /// </summary>
     public Editor() { }
 
+    /// <summary>
+    /// Open the Editor to edit an existing note
+    /// <br/><br/>
+    /// Call editor.Mainloop() to activate the editor
+    /// </summary>
+    /// <param name="existing_note">The note to open the Editor to</param>
     public Editor(Note existing_note)
     {
         this.editing_existing_note = true;
