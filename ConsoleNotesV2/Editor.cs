@@ -1457,11 +1457,10 @@ internal class Editor
 
         // If cursor is inside opening markup tag, add the closing tag to the end
         // Ex: [green<cursor_here>] -> <Ctrl+/ pressed> -> [green]<cursor_here>[/]
-        if (lines[cli][ci] == ']')
+        while (lines[cli].Count > ci && lines[cli][ci] == ']')
         {
             ci++;
             Console.CursorLeft++;
-            return;
         }
 
         // Insert the closing tag
