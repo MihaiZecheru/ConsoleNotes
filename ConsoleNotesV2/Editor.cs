@@ -390,10 +390,12 @@ internal class Editor
 
             /***
              * IMPORTANT: If the line has too many characters in it, overflow
-             * will be prevented by blocking new characters from being written
+             * will be prevented by entering a new line automatically and continuing
+             * on the next line
              ***/
-            if (keyinfo.Key == ConsoleKey.Tab && lines[cli].Count + 4 >= Console.BufferWidth - 2) continue;
-            else if (lines[cli].Count == Console.BufferWidth - 2) continue;
+            // The tab key enters multiple spaces so a separate check is needed
+            if (keyinfo.Key == ConsoleKey.Tab && lines[cli].Count + 4 >= Console.BufferWidth - 2) this.Enter();
+            else if (lines[cli].Count == Console.BufferWidth - 2) this.Enter();
 
             // Pressing TAB will add four spaces instead of a \t char
             if (keyinfo.Key == ConsoleKey.Tab)
@@ -1003,7 +1005,8 @@ internal class Editor
             states.AddState(lines, Tuple.Create(ci, cli));
             chars_pressed = 0;
         }
-        // If the cursor is at the very beginning, the current line should be appended to the previous line
+        // If the cursor is at the very beginning, the current line should be appended to the previous line if there is any text in front of the cursor
+        // Otherwise, the cursor should just move to the previous line
         else
         {
             // Nowhere to go if on the first line
@@ -1011,9 +1014,11 @@ internal class Editor
 
             /***
              * IMPORTANT: If the line has too many characters in it, overflow
-             * will be prevented by blocking new characters from being written
+             * will be prevented by blocking new characters from being written.
+             * If there is no text in the line, move the cursor to the end of the
+             * previous line.
              ***/
-            if (lines[cli].Count + lines[cli - 1].Count >= Console.BufferWidth - 2) return;
+            if (lines[cli].Count != 0 && lines[cli].Count + lines[cli - 1].Count >= Console.BufferWidth - 2) return;
 
             // Used for placing the cursor
             int prev_line_length = lines[cli - 1].Count;
@@ -1120,9 +1125,11 @@ internal class Editor
 
             /***
              * IMPORTANT: If the line has too many characters in it, overflow
-             * will be prevented by blocking new characters from being written
+             * will be prevented by blocking new characters from being written.
+             * If there is no text in the line, move the cursor to the end of the
+             * previous line.
              ***/
-            if (lines[cli].Count + lines[cli - 1].Count >= Console.BufferWidth - 2) return;
+            if (lines[cli].Count != 0 && lines[cli].Count + lines[cli - 1].Count >= Console.BufferWidth - 2) return;
 
             // Used for placing the cursor
             int prev_line_length = lines[cli - 1].Count;
