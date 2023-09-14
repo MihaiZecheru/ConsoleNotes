@@ -1461,6 +1461,7 @@ internal class Editor
         {
             ci++;
             Console.CursorLeft++;
+            return;
         }
 
         // Insert the closing tag
