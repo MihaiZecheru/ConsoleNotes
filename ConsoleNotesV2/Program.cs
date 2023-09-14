@@ -349,13 +349,13 @@ public class Program
             var change_setting_prompt = new SelectionPrompt<string>()
                 .Title("[yellow]Which [deeppink3]setting[/] do you want to change?[/]")
                 .AddChoices(new[] {
+                    "Quit",
                     "Show Rainbow Notes",
                     "Display Order",
                     "Date Format",
                     "Color1", "Color2", "Color3",
                     "Color4", "Color5", "Color6",
-                    "Color7", "Color8", "Color9", "Color0",
-                    "Exit"
+                    "Color7", "Color8", "Color9", "Color0"
                 })
                 .HighlightStyle(new Style(Color.DeepPink3));
 
@@ -499,7 +499,7 @@ public class Program
 
                 var what_to_edit_prompt = new SelectionPrompt<string>()
                     .Title("[yellow]Choose a field to [deeppink3]edit[/][/]")
-                    .AddChoices(new[] { "Quit", "Title", "Body" })
+                    .AddChoices(new[] { "Title", "Body", "Quit" })
                     .HighlightStyle(new Style(Color.DeepPink3));
 
                 what_to_edit_prompt.DisabledStyle = new Style(Color.Yellow);
