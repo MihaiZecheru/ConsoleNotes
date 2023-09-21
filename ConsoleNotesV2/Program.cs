@@ -493,6 +493,17 @@ public class Program
 
             while (true)
             {
+                /** Show preview of selected note **/
+
+                // Move past where the prompt will appear
+                Console.SetCursorPosition(0, 7);
+
+                // Write the selected note to the console
+                selected_note.Display();
+
+                // Move cursor back to beginning
+                Console.SetCursorPosition(0, 0);
+
                 var rule = new Spectre.Console.Rule("[deeppink3]Edit Note[/]");
                 rule.Style = new Style(Color.Yellow);
                 AnsiConsole.Write(rule);
@@ -536,6 +547,7 @@ public class Program
             int selected_note_index = GetSelectedNoteIndex();
             if (selected_note_index == -1) return;
             Note selected_note = Notes[selected_note_index];
+            
             /** Show preview of selected note **/
 
             // Move past where the prompt will appear
