@@ -394,7 +394,28 @@ internal class Editor
              * on the next line
              ***/
             // The tab key enters multiple spaces so a separate check is needed
-            if (keyinfo.Key == ConsoleKey.Tab && lines[cli].Count + 4 >= Console.BufferWidth - 2 || lines[cli].Count == Console.BufferWidth - 2) this.Enter();
+            if ((keyinfo.Key == ConsoleKey.Tab && lines[cli].Count + 4 >= Console.BufferWidth - 2) || lines[cli].Count == Console.BufferWidth - 2)
+            {
+                /***
+                 * This code will trigger when the current line is full.
+                 * Text will automatically be moved to the next line, which
+                 * is done by creating a new line.
+                 * 
+                 * Automatically moving to the next line is useless if it's
+                 * done halfway through a word, though, so the entire word
+                 * needs to be moved.
+                 * 
+                 * This is done by moving the cursor/ci to the last space
+                 * and pressing enter there, which will move the entire word to the next line
+                 ***/
+                
+                ci = lines[cli].LastIndexOf(' ') + 1;
+                int chars_moved = lines[cli].Count - ci;
+                Console.CursorLeft = ci;
+                this.Enter();
+                ci += chars_moved;
+                Console.CursorLeft = ci;
+            }
 
             // Pressing TAB will add four spaces instead of a \t char
             if (keyinfo.Key == ConsoleKey.Tab)
