@@ -289,10 +289,15 @@ public class Program
             add_title_prompt.DisabledStyle = new Style(Color.Yellow);
             bool add_title = AnsiConsole.Prompt(add_title_prompt).Replace("[yellow]", "").Replace("[/]", "") == "Yes";
 
+            // Default value is here because the user might not choose the 'add title' option
             string title = "{{TITLE_EMPTY}}";
             if (add_title)
             {
-                title = AnsiConsole.Ask<string>("[yellow]Title your [deeppink3]note[/]:[/]");
+                AnsiConsole.Markup("[yellow]Title your [deeppink3]note[/]:[/]");
+                title = AnsiConsole.Prompt(
+                    new TextPrompt<string>("" )
+                        .PromptStyle(new Style().Foreground(Color.Yellow))
+                );
 
                 // Clear the screen
                 Console.SetCursorPosition(0, 1);
