@@ -283,11 +283,11 @@ public class Program
 
             var add_title_prompt = new SelectionPrompt<string>()
                 .Title("[yellow]Give your note a [deeppink3]title[/]?[/]")
-                .AddChoices(new[] { "Yes", "No" })
+                .AddChoices(new[] { "[yellow]Yes[/]", "[yellow]No[/]" })
                 .HighlightStyle(new Style(Color.DeepPink3));
 
             add_title_prompt.DisabledStyle = new Style(Color.Yellow);
-            bool add_title = AnsiConsole.Prompt(add_title_prompt) == "Yes";
+            bool add_title = AnsiConsole.Prompt(add_title_prompt).Replace("[yellow]", "").Replace("[/]", "") == "Yes";
 
             string title = "{{TITLE_EMPTY}}";
             if (add_title)
@@ -349,18 +349,18 @@ public class Program
             var change_setting_prompt = new SelectionPrompt<string>()
                 .Title("[yellow]Which [deeppink3]setting[/] do you want to change?[/]")
                 .AddChoices(new[] {
-                    "Quit",
-                    "Show Rainbow Notes",
-                    "Display Order",
-                    "Date Format",
-                    "Color1", "Color2", "Color3",
-                    "Color4", "Color5", "Color6",
-                    "Color7", "Color8", "Color9", "Color0"
+                    "[yellow]Quit[/]",
+                    "[yellow]Show Rainbow Notes[/]",
+                    "[yellow]Display Order[/]",
+                    "[yellow]Date Format[/]",
+                    "[yellow]Color1[/]", "[yellow]Color2[/]", "[yellow]Color3[/]",
+                    "[yellow]Color4[/]", "[yellow]Color5[/]", "[yellow]Color6[/]",
+                    "[yellow]Color7[/]", "[yellow]Color8[/]", "[yellow]Color9[/]", "[yellow]Color0[/]"
                 })
                 .HighlightStyle(new Style(Color.DeepPink3));
 
-            change_setting_prompt.DisabledStyle = new Style(Color.Yellow);
-            string change_setting = AnsiConsole.Prompt(change_setting_prompt);
+            change_setting_prompt.DisabledStyle = new Style(Color.Yellow);   // Remove color tags
+            string change_setting = AnsiConsole.Prompt(change_setting_prompt).Replace("[yellow]", "").Replace("[/]", "");
 
             var regex = new Regex(@"^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$");
             Func<int, string> ChangeColorTo = (int color_num) =>
@@ -383,17 +383,17 @@ public class Program
             {
                 var set_new_value_prompt = new SelectionPrompt<string>()
                     .Title($"[yellow]Set new value for: [deeppink3]{question}[/][/]")
-                    .AddChoices(new[] { "True", "False" })
+                    .AddChoices(new[] { "[yellow]True[/]", "[yellow]False[/]" })
                     .HighlightStyle(new Style(Color.DeepPink3));
 
                 set_new_value_prompt.DisabledStyle = new Style(Color.Yellow);
-                return AnsiConsole.Prompt(set_new_value_prompt) == "True";
+                return AnsiConsole.Prompt(set_new_value_prompt).Replace("[yellow]", "").Replace("[/]", "") == "True";
             };
 
             string hex;
             switch (change_setting)
             {
-                case "Exit":
+                case "Quit":
                     UpdateMode(Mode.ViewNotes);
                     break;
 
@@ -404,21 +404,21 @@ public class Program
                 case "Display Order":
                     var display_order_new_value_prompt = new SelectionPrompt<string>()
                         .Title("[yellow]Set new value for: [deeppink3]Display Order[/][/]")
-                        .AddChoices(new[] { "Newest First", "Oldest First" })
+                        .AddChoices(new[] { "[yellow]Newest First[/]", "[yellow]Oldest First[/]" })
                         .HighlightStyle(new Style(Color.DeepPink3));
 
                     display_order_new_value_prompt.DisabledStyle = new Style(Color.Yellow);
-                    Settings.NotesDisplayOrder_NewestFirst = AnsiConsole.Prompt(display_order_new_value_prompt) == "Newest First";
+                    Settings.NotesDisplayOrder_NewestFirst = AnsiConsole.Prompt(display_order_new_value_prompt).Replace("[yellow]", "").Replace("[/]", "") == "Newest First";
                     break;
 
                 case "Date Format":
                     var date_day_first_new_value_prompt = new SelectionPrompt<string>()
                         .Title("[yellow]Set new value for: [deeppink3]Date Format[/][/]")
-                        .AddChoices(new[] { "MM/DD/YYYY", "DD/MM/YYYY" })
+                        .AddChoices(new[] { "[yellow]MM/DD/YYYY[/]", "[yellow]DD/MM/YYYY[/]" })
                         .HighlightStyle(new Style(Color.DeepPink3));
 
                     date_day_first_new_value_prompt.DisabledStyle = new Style(Color.Yellow);
-                    Settings.DateDayFirst = AnsiConsole.Prompt(date_day_first_new_value_prompt) == "DD/MM/YYYY";
+                    Settings.DateDayFirst = AnsiConsole.Prompt(date_day_first_new_value_prompt).Replace("[yellow]", "").Replace("[/]", "") == "DD/MM/YYYY";
                     break;
 
                 case "Color1":
@@ -487,7 +487,7 @@ public class Program
         }
         else if (mode == Mode.EditNote)
         {
-            int selected_note_index = GetSelectedNoteIndex();
+            int selected_note_index = GetSelectedNoteIndex("edit");
             if (selected_note_index == -1) return;
             Note selected_note = Notes[selected_note_index];
 
@@ -510,11 +510,11 @@ public class Program
 
                 var what_to_edit_prompt = new SelectionPrompt<string>()
                     .Title("[yellow]Choose a field to [deeppink3]edit[/][/]")
-                    .AddChoices(new[] { "Title", "Body", "Quit" })
+                    .AddChoices(new[] { "[yellow]Title[/]", "[yellow]Body[/]", "[yellow]Quit[/]" })
                     .HighlightStyle(new Style(Color.DeepPink3));
 
                 what_to_edit_prompt.DisabledStyle = new Style(Color.Yellow);
-                var answer = AnsiConsole.Prompt(what_to_edit_prompt);
+                string answer = AnsiConsole.Prompt(what_to_edit_prompt).Replace("[yellow]", "").Replace("[/]", "");
 
                 if (answer == "Title")
                 {
@@ -522,8 +522,8 @@ public class Program
                     string old_title = selected_note.Title == Note.EmptyTitle ? "<No Title>" : selected_note.Title;
                     AnsiConsole.Write(new Markup($"[deeppink3]Current Title:[/] [yellow]{old_title}[/]\n\n"));
 
-                    string new_title = AnsiConsole.Ask<string>("[yellow]Give your [deeppink3]note[/] a new title[/]", "press enter to remove title");
-                    if (new_title == "press enter to remove title") new_title = Note.EmptyTitle;
+                    string new_title = AnsiConsole.Ask<string>("[yellow]Give your [deeppink3]note[/] a new title[/]", "<%$$%>BLANK TITLE<%$$%>");
+                    if (new_title == "<%$$%>BLANK TITLE<%$$%>") new_title = Note.EmptyTitle;
                     EditNote(selected_note_index, new Note(new_title, selected_note.Body, selected_note.IsJson));
                 }
                 else if (answer == "Body")
@@ -544,7 +544,7 @@ public class Program
         }
         else if (mode == Mode.DeleteNote)
         {
-            int selected_note_index = GetSelectedNoteIndex();
+            int selected_note_index = GetSelectedNoteIndex("delete");
             if (selected_note_index == -1) return;
             Note selected_note = Notes[selected_note_index];
             
@@ -562,11 +562,11 @@ public class Program
             // Write prompt
             var confirmation_prompt = new SelectionPrompt<string>()
                 .Title($"[yellow]Are you sure you want to delete note [deeppink3]#{Math.Abs(selected_note_index - Notes.Count)}[/]?[/]")
-                .AddChoices(new[] { "Yes", "No" })
+                .AddChoices(new[] { "[yellow]Yes[/]", "[yellow]No[/]" })
                 .HighlightStyle(new Style(Color.DeepPink3));
 
             confirmation_prompt.DisabledStyle = new Style(Color.Yellow);
-            bool delete = AnsiConsole.Prompt(confirmation_prompt) == "Yes";
+            bool delete = AnsiConsole.Prompt(confirmation_prompt).Replace("[yellow]", "").Replace("[/]", "") == "Yes";
 
             if (!delete)
             {
@@ -673,9 +673,10 @@ public class Program
     /// <summary>
     /// Have the user select a note then return the index of that note in the <see cref="Notes"/> list
     /// </summary>
-    private static int GetSelectedNoteIndex()
+    /// <param name="action">Either 'edit' or 'delete'. Used in the prompt: "Select a note to {<paramref name="action"/>}"</param>
+    private static int GetSelectedNoteIndex(string action)
     {
-        List<string> choices = new List<string>() { "Quit" };
+        List<string> choices = new List<string>() { "[yellow]Quit[/]" };
 
         // Reverse notes to show the most recent ones at the top
         IEnumerable<Note> notes_sorted = NotesOrderNewestFirst ? Notes.ToArray().Reverse() : Notes;
@@ -685,19 +686,19 @@ public class Program
             string date_only = date.Substring(0, date.IndexOf(' '));
 
             if (note.Title == Note.EmptyTitle)
-                return $"{index + 1}. {date_only} | <No Title>";
+                return $"[yellow]{index + 1}. {date_only} | <No Title>[/]";
             else
-                return $"{index + 1}. {date_only} | {note.Title}";
+                return $"[yellow]{index + 1}. {date_only} | {note.Title}[/]";
         });
         choices.AddRange(parsedNotes);
 
         var select_note_prompt = new SelectionPrompt<string>()
-            .Title("[yellow]Select a note to [deeppink3]edit[/][/]")
+            .Title($"[yellow]Select a note to [deeppink3]{action}[/][/]")
             .AddChoices(choices)
             .HighlightStyle(new Style(Color.DeepPink3));
 
         select_note_prompt.DisabledStyle = new Style(Color.Yellow);
-        string selected_option = AnsiConsole.Prompt(select_note_prompt);
+        string selected_option = AnsiConsole.Prompt(select_note_prompt).Replace("[yellow]", "").Replace("[/]", "");
         
         if (selected_option == "Quit")
         {
