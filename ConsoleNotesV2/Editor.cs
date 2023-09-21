@@ -394,8 +394,7 @@ internal class Editor
              * on the next line
              ***/
             // The tab key enters multiple spaces so a separate check is needed
-            if (keyinfo.Key == ConsoleKey.Tab && lines[cli].Count + 4 >= Console.BufferWidth - 2) this.Enter();
-            else if (lines[cli].Count == Console.BufferWidth - 2) this.Enter();
+            if (keyinfo.Key == ConsoleKey.Tab && lines[cli].Count + 4 >= Console.BufferWidth - 2 || lines[cli].Count == Console.BufferWidth - 2) this.Enter();
 
             // Pressing TAB will add four spaces instead of a \t char
             if (keyinfo.Key == ConsoleKey.Tab)
