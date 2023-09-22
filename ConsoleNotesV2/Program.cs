@@ -229,7 +229,7 @@ public class Program
         // Move view range to the very top (home, beginning of the list, index 0)
         else if (key == ConsoleKey.Q)
         {
-            displayRange = new NotesRange(0, displayRangeCount);
+            displayRange = new NotesRange(0, (Notes.Count < displayRangeCount) ? Notes.Count : displayRangeCount - 1);
             Update();
             Console.SetCursorPosition(0, 0);
         }
@@ -512,7 +512,7 @@ public class Program
                 // Move cursor back to beginning
                 Console.SetCursorPosition(0, 0);
 
-                var rule = new Spectre.Console.Rule("[deeppink3]Edit Note[/]");
+                var rule = new Spectre.Console.Rule($"[deeppink3]Edit Note: {selected_note.Title}[/]");
                 rule.Style = new Style(Color.Yellow);
                 AnsiConsole.Write(rule);
 
@@ -523,10 +523,13 @@ public class Program
 
                 what_to_edit_prompt.DisabledStyle = new Style(Color.Yellow);
                 string answer = AnsiConsole.Prompt(what_to_edit_prompt).Replace("[yellow]", "").Replace("[/]", "");
+                
+                // Clear screen
+                Console.Clear();
+                AnsiConsole.Write(rule);
 
                 if (answer == "Title")
                 {
-                    Console.Clear();
                     string old_title = selected_note.Title == Note.EmptyTitle ? "<No Title>" : selected_note.Title;
                     AnsiConsole.Write(new Markup($"[deeppink3]Current Title:[/] [yellow]{old_title}[/]\n\n"));
 
@@ -570,7 +573,7 @@ public class Program
             // Write prompt
             var confirmation_prompt = new SelectionPrompt<string>()
                 .Title($"[yellow]Are you sure you want to delete note [deeppink3]#{Math.Abs(selected_note_index - Notes.Count)}[/]?[/]")
-                .AddChoices(new[] { "[yellow]Yes[/]", "[yellow]No[/]" })
+                .AddChoices(new[] { "[yellow]No[/]", "[yellow]Yes[/]" })
                 .HighlightStyle(new Style(Color.DeepPink3));
 
             confirmation_prompt.DisabledStyle = new Style(Color.Yellow);
