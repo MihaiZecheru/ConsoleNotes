@@ -140,9 +140,11 @@ internal class Editor
         while (true)
         {
             ConsoleKeyInfo keyinfo = Console.ReadKey(true);
+            bool ctrl = keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control);
+            bool shift = keyinfo.Modifiers.HasFlag(ConsoleModifiers.Shift);
 
             // Create then save the note - Ctrl+S 
-            if (keyinfo.Key == ConsoleKey.S && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control))
+            if (keyinfo.Key == ConsoleKey.S && )
             {
                 if (this.CtrlS())
                 {
@@ -154,19 +156,19 @@ internal class Editor
                 continue;
             }
             // Toggle JSON-Only
-            else if (keyinfo.Key == ConsoleKey.J && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control))
+            else if (keyinfo.Key == ConsoleKey.J && ctrl)
             {
                 this.CtrlJ();
                 continue;
             }
             // Undo - Ctrl+Z
-            else if (keyinfo.Key == ConsoleKey.Z && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control))
+            else if (keyinfo.Key == ConsoleKey.Z && ctrl)
             {
                 this.CtrlZ();
                 continue;
             }
             // Redo - Ctrl+Y
-            else if (keyinfo.Key == ConsoleKey.Y && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control))
+            else if (keyinfo.Key == ConsoleKey.Y && ctrl)
             {
                 this.CtrlY();
                 continue;
@@ -191,81 +193,81 @@ internal class Editor
             }
             // Ctrl+Home doesn't register as an event, so Ctrl+H is used instead
             // Move to beginning of text - Ctrl+H & Ctrl+UpArrow
-            else if ((keyinfo.Key == ConsoleKey.H || keyinfo.Key == ConsoleKey.UpArrow) && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control))
+            else if ((keyinfo.Key == ConsoleKey.H || keyinfo.Key == ConsoleKey.UpArrow) && ctrl)
             {
                 this.CtrlH();
                 continue;
             }
             // Ctrl+End doesn't register as an event, so Ctrl+E is used instead
             // Move to end of text - Ctrl+E & Ctrl+DownArrow
-            else if ((keyinfo.Key == ConsoleKey.E || keyinfo.Key == ConsoleKey.DownArrow) && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control))
+            else if ((keyinfo.Key == ConsoleKey.E || keyinfo.Key == ConsoleKey.DownArrow) && ctrl)
             {
                 this.CtrlE();
                 continue;
             }
             // Highlight text left one word - Ctrl+Shift+LeftArrow
-            else if (keyinfo.Key == ConsoleKey.LeftArrow && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control) && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Shift))
+            else if (keyinfo.Key == ConsoleKey.LeftArrow && ctrl && shift)
             {
                 this.CtrlShiftLeftArrow();
                 continue;
             }
             // Highlight text left one character - Shift+LeftArrow
-            else if (keyinfo.Key == ConsoleKey.LeftArrow && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Shift))
+            else if (keyinfo.Key == ConsoleKey.LeftArrow && shift)
             {
                 this.ShiftLeftArrow();
                 continue;
             }
             // Highlight text right one word - Ctrl+Shift+RightArrow
-            else if (keyinfo.Key == ConsoleKey.RightArrow && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control) && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Shift))
+            else if (keyinfo.Key == ConsoleKey.RightArrow && ctrl && shift)
             {
                 this.CtrlShiftRightArrow();
                 continue;
             }
             // Highlight text right one character - Shift+RightArrow
-            else if (keyinfo.Key == ConsoleKey.RightArrow && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Shift))
+            else if (keyinfo.Key == ConsoleKey.RightArrow && shift)
             {
                 this.ShiftRightArrow();
                 continue;
             }
             // Highlight text up one line - Shift+UpArrow
-            else if (keyinfo.Key == ConsoleKey.UpArrow && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Shift))
+            else if (keyinfo.Key == ConsoleKey.UpArrow && shift)
             {
                 this.ShiftUpArrow();
                 continue;
             }
             // Highlight text down one line - Shift+DownArrow
-            else if (keyinfo.Key == ConsoleKey.DownArrow && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Shift))
+            else if (keyinfo.Key == ConsoleKey.DownArrow && shift)
             {
                 this.ShiftDownArrow();
                 continue;
             }
             // Highlight text to beginning of paragraph - Ctrl+Shift+Up
-            else if (keyinfo.Key == ConsoleKey.UpArrow && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control) && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Shift))
+            else if (keyinfo.Key == ConsoleKey.UpArrow && ctrl && shift)
             {
                 this.CtrlShiftUp();
                 continue;
             }
             // Highlight text to end of paragraph - Ctrl+Shift+Down
-            else if (keyinfo.Key == ConsoleKey.DownArrow && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control) && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Shift))
+            else if (keyinfo.Key == ConsoleKey.DownArrow && ctrl && shift)
             {
                 this.CtrlShiftDown();
                 continue;
             }
             // Highlight all text - Ctrl+A
-            else if (keyinfo.Key == ConsoleKey.A && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control))
+            else if (keyinfo.Key == ConsoleKey.A && ctrl)
             {
                 this.CtrlA();
                 continue;
             }
             // Copy selected text - Ctrl+C
-            else if (keyinfo.Key == ConsoleKey.C && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control))
+            else if (keyinfo.Key == ConsoleKey.C && ctrl)
             {
                 // Note: Console.TreatControlCAsInput = true in Program.cs and on class initialization
                 this.CtrlC();
                 continue;
             }
             // Move cursor left one word - Ctrl+LeftArrow
-            else if (keyinfo.Key == ConsoleKey.LeftArrow && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control))
+            else if (keyinfo.Key == ConsoleKey.LeftArrow && ctrl)
             {
                 this.CtrlLeftArrow();
                 continue;
@@ -277,7 +279,7 @@ internal class Editor
                 continue;
             }
             // Move cursor right one word - Ctrl+RightArrow
-            else if (keyinfo.Key == ConsoleKey.RightArrow && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control))
+            else if (keyinfo.Key == ConsoleKey.RightArrow && ctrl)
             {
                 this.CtrlRightArrow();
                 continue;
@@ -301,7 +303,7 @@ internal class Editor
                 continue;
             }
             // Delete previous word - Ctrl+Backspace
-            else if (keyinfo.Key == ConsoleKey.Backspace && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control))
+            else if (keyinfo.Key == ConsoleKey.Backspace && ctrl)
             {
                 this.CtrlBackspace();
                 continue;
@@ -313,7 +315,7 @@ internal class Editor
                 continue;
             }
             // Delete next word - Ctrl+Delete
-            else if (keyinfo.Key == ConsoleKey.Delete && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control))
+            else if (keyinfo.Key == ConsoleKey.Delete && ctrl)
             {
                 this.CtrlDelete();
                 continue;
@@ -325,19 +327,19 @@ internal class Editor
                 continue;
             }
             // Delete current line - Ctrl+K
-            else if (keyinfo.Key == ConsoleKey.K && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control))
+            else if (keyinfo.Key == ConsoleKey.K && ctrl)
             {
                 this.CtrlShiftK();
                 continue;
             }
             // Add closing markup tag [/] - Ctrl+/
-            else if (keyinfo.Key == ConsoleKey.Oem2 && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control))
+            else if (keyinfo.Key == ConsoleKey.Oem2 && ctrl)
             {
                 this.CtrlForwardSlash();
                 continue;
             }
             // Add ending bracket when pressing the opening bracket [ => []
-            else if (keyinfo.Key == ConsoleKey.Oem4 && !keyinfo.Modifiers.HasFlag(ConsoleModifiers.Shift))
+            else if (keyinfo.Key == ConsoleKey.Oem4 && !shift)
             {
                 // TODO: this is because i assume people will paste json into the editor, which would cause the brackets to become messed up. todo is find a way to detect when text is being pasted to fix this issue
                 // Don't do this while in JSON-Only mode
@@ -348,7 +350,7 @@ internal class Editor
                 }
             }
             // Add ending bracket when pressing the opening bracket ( => ()
-            else if (keyinfo.Key == ConsoleKey.D9 && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Shift))
+            else if (keyinfo.Key == ConsoleKey.D9 && shift)
             {
                 if (!isJson)
                 {
@@ -357,7 +359,7 @@ internal class Editor
                 }
             }
             // Add ending bracket when pressing the opening bracket { => {}
-            else if (keyinfo.Key == ConsoleKey.Oem4 && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Shift))
+            else if (keyinfo.Key == ConsoleKey.Oem4 && shift)
             {
                 if (!isJson)
                 {
@@ -366,14 +368,14 @@ internal class Editor
                 }
             }
             // Ctrl+Q: quit without saving
-            else if (keyinfo.Key == ConsoleKey.Q && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control))
+            else if (keyinfo.Key == ConsoleKey.Q && ctrl)
             {
                 return false;
             }
             /***
              * Markup keybinds
              ***/
-            else if (keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control))
+            else if (ctrl)
             {
                 // Don't do this while in JSON-Only mode
                 if (!isJson)
@@ -424,11 +426,11 @@ internal class Editor
                 ci < lines[cli].Count
                 &&
                 (
-                    (keyinfo.Key == ConsoleKey.Oem6 && lines[cli][ci] == ']' && !keyinfo.Modifiers.HasFlag(ConsoleModifiers.Shift))
+                    (keyinfo.Key == ConsoleKey.Oem6 && lines[cli][ci] == ']' && !shift)
                     ||
-                    (keyinfo.Key == ConsoleKey.Oem6 && lines[cli][ci] == '}' && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Shift))
+                    (keyinfo.Key == ConsoleKey.Oem6 && lines[cli][ci] == '}' && shift)
                     ||
-                    (keyinfo.Key == ConsoleKey.D0 && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Shift) && lines[cli][ci] == ')')
+                    (keyinfo.Key == ConsoleKey.D0 && shift && lines[cli][ci] == ')')
                 )
             )
             {
