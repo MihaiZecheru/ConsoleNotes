@@ -63,8 +63,8 @@ public class Note
     {
         get
         {
-            DateTime datestamp = DateTime.ParseExact(createdAt, "dd/MM/yyyy HH:mm:ss", null);
-            return Program.Settings.DateDayFirst ? datestamp.ToString("dd/MM/yyyy HH:mm:ss") : datestamp.ToString("MM/dd/yyyy HH:mm:ss");
+            DateTime datestamp = DateTime.ParseExact(createdAt, "dd/MM/yyyy HH:mm", null);
+            return Program.Settings.DateDayFirst ? datestamp.ToString("dd/MM/yyyy HH:mm") : datestamp.ToString("MM/dd/yyyy HH:mm");
         }
     }
 
@@ -83,7 +83,7 @@ public class Note
         Title = title;
         Body = body;
         NoTitle = (Title == EmptyTitle);
-        createdAt = DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss");
+        createdAt = DateTime.Now.ToString("dd/MM/yyyy HH:mm");
         IsJson = isJson;
     }
 
