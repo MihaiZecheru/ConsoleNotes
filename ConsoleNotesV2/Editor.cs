@@ -5,6 +5,34 @@ using System.Text.RegularExpressions;
 
 namespace ConsoleNotes;
 
+struct TextRange
+{
+    /// <summary>
+    /// The line the text range starts on
+    /// </summary>
+    public int StartLineNumber { get; set; }
+    /// <summary>
+    /// The position of the starting character in <see cref="StartLineNumber"/>
+    /// </summary>
+    public int StartCharacterPosition { get; set; }
+    /// <summary>
+    /// The line the text range ends on
+    /// </summary>
+    public int EndLineNumber { get; set; }
+    /// <summary>
+    /// The position of the ending character in <see cref="EndLineNumber"/>
+    /// </summary>
+    public int EndCharacterPosition { get; set; }
+
+    public TextRange(int start_line_number, int start_character_position, int end_line_number, int end_character_position)
+    {
+        this.StartLineNumber = start_line_number;
+        this.StartCharacterPosition = start_character_position;
+        this.EndLineNumber = end_line_number;
+        this.EndCharacterPosition = end_character_position;
+    }
+}
+
 /// <summary>
 /// Manages creating a new note or editing an existing one; a built-in console text editor
 /// </summary>
@@ -62,6 +90,11 @@ internal class Editor
     private bool editing_existing_note = false;
 
     /// <summary>
+    /// Keep track of the selected/highlighted text
+    /// </summary>
+    private TextRange selected_text_range = new(0, 0, 0, 0);
+
+    /// <summary>
     /// Concatenate the note into a single string
     /// </summary>
     /// <param name="start">The index of the line to start concatenating from</param>
@@ -74,10 +107,36 @@ internal class Editor
         for (int i = start; i < lines.Count; i++)
         {
             for (int j = 0; j < lines[i].Count; j++) s += lines[i][j];
-            s += '\n';
+            if (i != lines.Count - 1) s += '\n';
         }
 
         return trim ? s.Trim() : s;
+    }
+
+    /// <summary>
+    /// Get the currently selected text based on the selected_text_range field
+    /// </summary>
+    /// <returns></returns>
+    private string GetSelectedContent()
+    {
+        string s = string.Empty;
+
+        for (int i = selected_text_range.StartLineNumber; i < selected_text_range.EndLineNumber; i++)
+        {
+            if (lines.Count == i) break;
+            for (int j = 0; j < lines[i].Count; j++)
+            {
+                // Skip characters before the start of the selected text
+                if (i == selected_text_range.StartLineNumber && j < selected_text_range.StartCharacterPosition) continue;
+                if (i == selected_text_range.EndLineNumber && j > selected_text_range.EndCharacterPosition) break;
+
+                s += lines[i][j];
+            }
+
+            if (i != selected_text_range.EndLineNumber - 1) s += '\n';
+        }
+
+        return s;
     }
 
     // *** //
@@ -91,6 +150,10 @@ internal class Editor
     {
         // Prevent Ctrl+C from closing the application as users might accidentally quit while copying a note's content
         Console.TreatControlCAsInput = true;
+
+        // Default colors
+        Console.BackgroundColor = ConsoleColor.Black;
+        Console.ForegroundColor = ConsoleColor.White;
     }
 
     /// <summary>
@@ -106,6 +169,10 @@ internal class Editor
 
         // Prevent Ctrl+C from closing the application as users might accidentally quit while copying a note's content
         Console.TreatControlCAsInput = true;
+
+        // Default colors
+        Console.BackgroundColor = ConsoleColor.Black;
+        Console.ForegroundColor = ConsoleColor.White;
 
         // Split the note into lines
         string[] lines = existing_note.Body.Split('\n');
@@ -147,7 +214,7 @@ internal class Editor
             bool shift = keyinfo.Modifiers.HasFlag(ConsoleModifiers.Shift);
 
             // Create then save the note - Ctrl+S 
-            if (keyinfo.Key == ConsoleKey.S && )
+            if (keyinfo.Key == ConsoleKey.S && ctrl)
             {
                 if (this.CtrlS())
                 {
@@ -167,37 +234,45 @@ internal class Editor
             // Undo - Ctrl+Z
             else if (keyinfo.Key == ConsoleKey.Z && ctrl)
             {
+                if (select_mode) this.DeselectText();
                 this.CtrlZ();
                 continue;
             }
             // Redo - Ctrl+Y
             else if (keyinfo.Key == ConsoleKey.Y && ctrl)
             {
+                if (select_mode) this.DeselectText();
                 this.CtrlY();
                 continue;
             }
             // Create new line - Enter
             else if (keyinfo.Key == ConsoleKey.Enter)
             {
+                // Replace with newline (Enter) if text is selected
+                if (select_mode) this.DeleteSelectedText();
+                // Runs regardless
                 this.Enter();
                 continue;
             }
             // Move to beginning of line - Home
             else if (keyinfo.Key == ConsoleKey.Home)
             {
+                if (select_mode) this.DeselectText();
                 this.Home();
                 continue;
             }
             // Move to end of line - End
             else if (keyinfo.Key == ConsoleKey.End)
             {
+                if (select_mode) this.DeselectText();
                 this.End();
                 continue;
             }
-            // Ctrl+Home doesn't register as an event, so Ctrl+H is used instead
             // Move to beginning of text - Ctrl+H & Ctrl+UpArrow
+            // Ctrl+Home doesn't register as an event, so Ctrl+H is used instead
             else if ((keyinfo.Key == ConsoleKey.H || keyinfo.Key == ConsoleKey.UpArrow) && ctrl)
             {
+                if (select_mode) this.DeselectText();
                 this.CtrlH();
                 continue;
             }
@@ -205,57 +280,59 @@ internal class Editor
             // Move to end of text - Ctrl+E & Ctrl+DownArrow
             else if ((keyinfo.Key == ConsoleKey.E || keyinfo.Key == ConsoleKey.DownArrow) && ctrl)
             {
+                if (select_mode) this.DeselectText();
                 this.CtrlE();
                 continue;
             }
-            // Highlight text left one word - Ctrl+Shift+LeftArrow
-            else if (keyinfo.Key == ConsoleKey.LeftArrow && ctrl && shift)
-            {
-                this.CtrlShiftLeftArrow();
-                continue;
-            }
-            // Highlight text left one character - Shift+LeftArrow
-            else if (keyinfo.Key == ConsoleKey.LeftArrow && shift)
-            {
-                this.ShiftLeftArrow();
-                continue;
-            }
-            // Highlight text right one word - Ctrl+Shift+RightArrow
-            else if (keyinfo.Key == ConsoleKey.RightArrow && ctrl && shift)
-            {
-                this.CtrlShiftRightArrow();
-                continue;
-            }
-            // Highlight text right one character - Shift+RightArrow
-            else if (keyinfo.Key == ConsoleKey.RightArrow && shift)
-            {
-                this.ShiftRightArrow();
-                continue;
-            }
-            // Highlight text up one line - Shift+UpArrow
-            else if (keyinfo.Key == ConsoleKey.UpArrow && shift)
-            {
-                this.ShiftUpArrow();
-                continue;
-            }
-            // Highlight text down one line - Shift+DownArrow
-            else if (keyinfo.Key == ConsoleKey.DownArrow && shift)
-            {
-                this.ShiftDownArrow();
-                continue;
-            }
-            // Highlight text to beginning of paragraph - Ctrl+Shift+Up
-            else if (keyinfo.Key == ConsoleKey.UpArrow && ctrl && shift)
-            {
-                this.CtrlShiftUp();
-                continue;
-            }
-            // Highlight text to end of paragraph - Ctrl+Shift+Down
-            else if (keyinfo.Key == ConsoleKey.DownArrow && ctrl && shift)
-            {
-                this.CtrlShiftDown();
-                continue;
-            }
+            // TODO: for each of these shift+direction functions, do something to the selected_text_range
+            //// Highlight text left one character - Shift+LeftArrow
+            //else if (keyinfo.Key == ConsoleKey.LeftArrow && shift)
+            //{
+            //    this.ShiftLeftArrow();
+            //    continue;
+            //}
+            //// Highlight text right one character - Shift+RightArrow
+            //else if (keyinfo.Key == ConsoleKey.RightArrow && shift)
+            //{
+            //    this.ShiftRightArrow();
+            //    continue;
+            //}
+            //// Highlight text left one word - Ctrl+Shift+LeftArrow
+            //else if (keyinfo.Key == ConsoleKey.LeftArrow && ctrl && shift)
+            //{
+            //    this.CtrlShiftLeftArrow();
+            //    continue;
+            //}
+            //// Highlight text right one word - Ctrl+Shift+RightArrow
+            //else if (keyinfo.Key == ConsoleKey.RightArrow && ctrl && shift)
+            //{
+            //    this.CtrlShiftRightArrow();
+            //    continue;
+            //}
+            //// Highlight text up one line - Shift+UpArrow
+            //else if (keyinfo.Key == ConsoleKey.UpArrow && shift)
+            //{
+            //    this.ShiftUpArrow();
+            //    continue;
+            //}
+            //// Highlight text down one line - Shift+DownArrow
+            //else if (keyinfo.Key == ConsoleKey.DownArrow && shift)
+            //{
+            //    this.ShiftDownArrow();
+            //    continue;
+            //}
+            //// Highlight text to beginning of paragraph - Ctrl+Shift+Up
+            //else if (keyinfo.Key == ConsoleKey.UpArrow && ctrl && shift)
+            //{
+            //    this.CtrlShiftUp();
+            //    continue;
+            //}
+            //// Highlight text to end of paragraph - Ctrl+Shift+Down
+            //else if (keyinfo.Key == ConsoleKey.DownArrow && ctrl && shift)
+            //{
+            //    this.CtrlShiftDown();
+            //    continue;
+            //}
             // Highlight all text - Ctrl+A
             else if (keyinfo.Key == ConsoleKey.A && ctrl)
             {
@@ -267,77 +344,92 @@ internal class Editor
             {
                 // Note: Console.TreatControlCAsInput = true in Program.cs and on class initialization
                 this.CtrlC();
+                this.DeselectText();
                 continue;
             }
             // Move cursor left one word - Ctrl+LeftArrow
             else if (keyinfo.Key == ConsoleKey.LeftArrow && ctrl)
             {
+                if (select_mode) this.DeselectText();
                 this.CtrlLeftArrow();
                 continue;
             }
             // Move cursor left one character - LeftArrow
             else if (keyinfo.Key == ConsoleKey.LeftArrow)
             {
+                if (select_mode) this.DeselectText();
                 this.LeftArrow();
                 continue;
             }
             // Move cursor right one word - Ctrl+RightArrow
             else if (keyinfo.Key == ConsoleKey.RightArrow && ctrl)
             {
+                if (select_mode) this.DeselectText();
                 this.CtrlRightArrow();
                 continue;
             }
             // Move cursor right one character - RightArrow
             else if (keyinfo.Key == ConsoleKey.RightArrow)
             {
+                if (select_mode) this.DeselectText();
                 this.RightArrow();
                 continue;
             }
             // Move cursor down once - DownArrow
             else if (keyinfo.Key == ConsoleKey.DownArrow)
             {
+                if (select_mode) this.DeselectText();
                 this.DownArrow();
                 continue;
             }
             // Move cursor up once - UpArrow
             else if (keyinfo.Key == ConsoleKey.UpArrow)
             {
+                if (select_mode) this.DeselectText();
                 this.UpArrow();
                 continue;
             }
             // Delete previous word - Ctrl+Backspace
             else if (keyinfo.Key == ConsoleKey.Backspace && ctrl)
             {
-                this.CtrlBackspace();
+                if (select_mode) this.DeleteSelectedText();
+                else this.CtrlBackspace();
                 continue;
             }
             // Delete previous character - Backspace
             else if (keyinfo.Key == ConsoleKey.Backspace)
             {
-                this.Backspace();
+                if (select_mode) this.DeleteSelectedText();
+                else this.Backspace();
                 continue;
             }
             // Delete next word - Ctrl+Delete
             else if (keyinfo.Key == ConsoleKey.Delete && ctrl)
             {
-                this.CtrlDelete();
+                if (select_mode) this.DeleteSelectedText();
+                else this.CtrlDelete();
                 continue;
             }
             // Delete next character - Delete
             else if (keyinfo.Key == ConsoleKey.Delete)
             {
-                this.Delete();
+                if (select_mode) this.DeleteSelectedText();
+                else this.Delete();
                 continue;
             }
             // Delete current line - Ctrl+K
             else if (keyinfo.Key == ConsoleKey.K && ctrl)
             {
-                this.CtrlShiftK();
+                if (select_mode) this.DeleteSelectedText();
+                else this.CtrlShiftK();
                 continue;
             }
             // Add closing markup tag [/] - Ctrl+/
             else if (keyinfo.Key == ConsoleKey.Oem2 && ctrl)
             {
+                // Replace with closing tag if text is selected
+                if (select_mode) this.DeleteSelectedText();
+                // Runs regardless
                 this.CtrlForwardSlash();
                 continue;
             }
@@ -348,6 +440,9 @@ internal class Editor
                 // Don't do this while in JSON-Only mode
                 if (!isJson)
                 {
+                    // Replace with closing bracket if text is selected
+                    if (select_mode) this.DeleteSelectedText();
+                    // Runs regardless
                     this.ClosingBracket(0);
                     continue;
                 }
@@ -357,6 +452,9 @@ internal class Editor
             {
                 if (!isJson)
                 {
+                    // Replace with closing bracket if text is selected
+                    if (select_mode) this.DeleteSelectedText();
+                    // Runs regardless
                     this.ClosingBracket(1);
                     continue;
                 }
@@ -366,6 +464,9 @@ internal class Editor
             {
                 if (!isJson)
                 {
+                    // Replace with closing bracket if text is selected
+                    if (select_mode) this.DeleteSelectedText();
+                    // Runs regardless
                     this.ClosingBracket(2);
                     continue;
                 }
@@ -382,7 +483,7 @@ internal class Editor
             {
                 // Don't do this while in JSON-Only mode
                 if (!isJson)
-                {
+                { // TODO: add something for selected text here
                     this.HandleMarkupKeybinds(keyinfo);
                     continue;
                 }
@@ -400,10 +501,21 @@ internal class Editor
                 continue;
             }
 
-            /*** Done with main checks ***/
 
             // Check if the key event was 'Alt+V', the keybind for returning to the 'view' menu
             if (keyinfo.Key == ConsoleKey.V && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Alt)) return false;
+
+            /*** Done with main checks for shortcuts ***/
+
+            /***
+             * Below is where the char that is a result of a regular keypress is added to the note
+             ***/
+
+            // Selected text replaces selected text when a character is pressed while text is selected
+            if (select_mode)
+            {
+                this.DeleteSelectedText();
+            }
 
             // Check if the key was TAB and if the cursor is within a set of markup tags [italic]cursor here[/]
             // If the above are true, move the cursor to just outside the closing tag [/]
@@ -450,10 +562,6 @@ internal class Editor
              * before it's saved to the note
              * 
              * This is done a a few lines further down
-             ***/
-
-            /***
-             * Below is where the pressed char is added to the note
              ***/
 
             // This array will typically hold only one key, but if tab is pressed, it will hold four spaces
@@ -803,6 +911,31 @@ internal class Editor
         cli = lines.Count - 1;
         ci = lines[cli].Count;
         Console.SetCursorPosition(ci, cli + 1);
+    }
+
+    private void CtrlA()
+    {
+        this.selected_text_range = new(0, 0, lines.Count, lines[lines.Count - 1].Count);
+
+        // Highlight the selected text
+        Console.SetCursorPosition(0, 1);
+        EnableSelectMode();
+        Console.Write(GetNoteContent(0));
+        cli = lines.Count - 1;
+        ci = lines[cli].Count;
+    }
+
+    /// <summary>
+    /// Ctrl+C - Copy selected text
+    /// </summary>
+    private void CtrlC()
+    {
+        string selected_text = GetSelectedContent();
+        
+        if (selected_text.Length != 0)
+        {
+            TextCopy.ClipboardService.SetText(selected_text);
+        }
     }
 
     /// <summary>
@@ -1800,5 +1933,44 @@ internal class Editor
         }
 
         return false;
+    }
+
+    private bool select_mode = false;
+
+    /// <summary>
+    /// Enable highlight mode, meaning the colors background and foreground colors are inverted
+    /// </summary>
+    private void EnableSelectMode()
+    {
+        Console.BackgroundColor = ConsoleColor.White;
+        Console.ForegroundColor = ConsoleColor.Black;
+        select_mode = true;
+    }
+
+    /// <summary>
+    /// Disable highlight mode, meaning:<br/>
+    /// - the colors background and foreground colors are normal<br/>
+    /// - all text is unselected/unhighlighted, which is done by rewriting the note
+    /// </summary>
+    private void DeselectText()
+    {
+        // Change colors back to normal
+        Console.BackgroundColor = ConsoleColor.Black;
+        Console.ForegroundColor = ConsoleColor.White;
+        select_mode = false;
+
+        // Unselect
+        Console.SetCursorPosition(0, 1);
+        Console.Write(GetNoteContent(0));
+
+        // Clear the selection
+        selected_text_range = new(0, 0, 0, 0);
+    }
+
+    private void DeleteSelectedText()
+    {
+        this.DeselectText();
+
+        
     }
 }
