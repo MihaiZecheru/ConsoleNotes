@@ -597,11 +597,18 @@ public class Program
             var keybindsRule = new Rule("Keybinds Help");
             keybindsRule.Style = new Style(Color.DeepPink3);
 
+            var plainRule = new Rule();
+            plainRule.Style = new Style(Color.DeepPink3);
+
             AnsiConsole.Write(settingsRule);
+            Console.WriteLine();
             AnsiConsole.Write(new Markup("[yellow]" + Markup.Escape(File.ReadAllText("./Settings.txt")) + "[/]\n\n"));
 
             AnsiConsole.Write(keybindsRule);
+            Console.WriteLine();
             AnsiConsole.Write(new Markup("[yellow]" + Markup.Escape(File.ReadAllText("./Keybinds.txt")) + "[/]"));
+            Console.WriteLine("\n");
+            AnsiConsole.Write(plainRule);
             Console.SetCursorPosition(0, 0);
         }
     }
