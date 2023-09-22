@@ -53,6 +53,9 @@ public class Program
 
     public static void Main()
     {
+        // Prevent Ctrl+C from closing the application as users might accidentally quit while copying a note's content
+        Console.TreatControlCAsInput = true;
+
         if (!File.Exists(notesFilePath))
         {
             Directory.CreateDirectory(@"C:\ConsoleNotes");

@@ -87,7 +87,11 @@ internal class Editor
     /// <br/><br/>
     /// Call editor.Mainloop() to activate the editor
     /// </summary>
-    public Editor() { }
+    public Editor()
+    {
+        // Prevent Ctrl+C from closing the application as users might accidentally quit while copying a note's content
+        Console.TreatControlCAsInput = true;
+    }
 
     /// <summary>
     /// Open the Editor to edit an existing note
@@ -256,7 +260,7 @@ internal class Editor
             // Copy selected text - Ctrl+C
             else if (keyinfo.Key == ConsoleKey.C && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control))
             {
-                // Note: Console.TreatControlCAsInput = false in Program.cs and on class initialization
+                // Note: Console.TreatControlCAsInput = true in Program.cs and on class initialization
                 this.CtrlC();
                 continue;
             }
