@@ -56,6 +56,9 @@ public class Program
         // Prevent Ctrl+C from closing the application as users might accidentally quit while copying a note's content
         Console.TreatControlCAsInput = true;
 
+        Console.BackgroundColor = ConsoleColor.Black;
+        Console.ForegroundColor = ConsoleColor.White;
+
         if (!File.Exists(notesFilePath))
         {
             Directory.CreateDirectory(@"C:\ConsoleNotes");
@@ -225,6 +228,11 @@ public class Program
         else if (key == ConsoleKey.H)
         {
             UpdateMode(Mode.Help);
+        }
+        // Quit out of the application using Ctrl+Q because Ctrl+C quitting is disabled
+        else if (key == ConsoleKey.Q && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control))
+        {
+            Environment.Exit(0);
         }
         // Move view range to the very top (home, beginning of the list, index 0)
         else if (key == ConsoleKey.Q)
@@ -512,7 +520,8 @@ public class Program
                 // Move cursor back to beginning
                 Console.SetCursorPosition(0, 0);
 
-                var rule = new Spectre.Console.Rule($"[deeppink3]Edit Note: {selected_note.Title}[/]");
+                string title = selected_note.Title == Note.EmptyTitle ? "Untitled" : selected_note.Title;
+                var rule = new Spectre.Console.Rule($"[deeppink3]Edit Note: {title}[/]");
                 rule.Style = new Style(Color.Yellow);
                 AnsiConsole.Write(rule);
 
@@ -530,7 +539,7 @@ public class Program
 
                 if (answer == "Title")
                 {
-                    string old_title = selected_note.Title == Note.EmptyTitle ? "<No Title>" : selected_note.Title;
+                    string old_title = selected_note.Title == Note.EmptyTitle ? "Untitled" : selected_note.Title;
                     AnsiConsole.Write(new Markup($"[deeppink3]Current Title:[/] [yellow]{old_title}[/]\n\n"));
 
                     string new_title = AnsiConsole.Ask<string>("[yellow]Give your [deeppink3]note[/] a new title[/]", "<%$$%>BLANK TITLE<%$$%>");
@@ -704,7 +713,7 @@ public class Program
             string date_only = date.Substring(0, date.IndexOf(' '));
 
             if (note.Title == Note.EmptyTitle)
-                return $"[yellow]{index + 1}. {date_only} | <No Title>[/]";
+                return $"[yellow]{index + 1}. {date_only} | Untitled[/]";
             else
                 return $"[yellow]{index + 1}. {date_only} | {note.Title}[/]";
         });
