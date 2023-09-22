@@ -65,6 +65,7 @@ internal class Editor
     /// Concatenate the note into a single string
     /// </summary>
     /// <param name="start">The index of the line to start concatenating from</param>
+    /// <param name="trim">If the note should be trimmed</param>
     /// <returns>The concatenated note which includes all lines from [start, lines.Count - 1]</returns>
     private string GetNoteContent(int start, bool trim = false)
     {
@@ -1510,9 +1511,9 @@ internal class Editor
     private void ClosingBracket(int bracket_type)
     {
         /***
-                 * IMPORTANT: If the line has too many characters in it, overflow
-                 * will be prevented by blocking new characters from being written
-                 ***/
+         * IMPORTANT: If the line has too many characters in it, overflow
+         * will be prevented by blocking new characters from being written
+        ***/
         if (lines[cli].Count + 2 >= Console.BufferWidth - 2) return;
 
         /*** Insert the two brackets ***/
@@ -1558,14 +1559,14 @@ internal class Editor
     private void HandleMarkupKeybinds(ConsoleKeyInfo keyinfo)
     {
         /***
-            * Pressing one of these keybinds will
-            * insert a spectre.console markup style
-            * such as italics, underline, etc.
-            * 
-            * For colors, the user can press a number
-            * between 0 - 9, which he can map to a specific hex
-            * on his own by going to the settings via Alt+S
-            ***/
+         * Pressing one of these keybinds will
+         * insert a spectre.console markup style
+         * such as italics, underline, etc.
+         * 
+         * For colors, the user can press a number
+         * between 0 - 9, which he can map to a specific hex
+         * on his own by going to the settings via Alt+S
+        ***/
         List<char> _chars_to_add = new List<char>();
 
         switch (keyinfo.Key)
