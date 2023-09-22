@@ -103,7 +103,10 @@ internal class Editor
     {
         this.editing_existing_note = true;
         this.isJson = existing_note.IsJson;
-        
+
+        // Prevent Ctrl+C from closing the application as users might accidentally quit while copying a note's content
+        Console.TreatControlCAsInput = true;
+
         // Split the note into lines
         string[] lines = existing_note.Body.Split('\n');
 
