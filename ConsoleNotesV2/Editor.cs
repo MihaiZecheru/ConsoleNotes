@@ -199,6 +199,67 @@ internal class Editor
                 this.CtrlE();
                 continue;
             }
+            // Highlight text left one word - Ctrl+Shift+LeftArrow
+            else if (keyinfo.Key == ConsoleKey.LeftArrow && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control) && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Shift))
+            {
+                this.CtrlShiftLeftArrow();
+                continue;
+            }
+            // Highlight text left one character - Shift+LeftArrow
+            else if (keyinfo.Key == ConsoleKey.LeftArrow && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Shift))
+            {
+                this.ShiftLeftArrow();
+                continue;
+            }
+            // Highlight text right one word - Ctrl+Shift+RightArrow
+            else if (keyinfo.Key == ConsoleKey.RightArrow && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control) && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Shift))
+            {
+                this.CtrlShiftRightArrow();
+                continue;
+            }
+            // Highlight text right one character - Shift+RightArrow
+            else if (keyinfo.Key == ConsoleKey.RightArrow && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Shift))
+            {
+                this.ShiftRightArrow();
+                continue;
+            }
+            // Highlight text up one line - Shift+UpArrow
+            else if (keyinfo.Key == ConsoleKey.UpArrow && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Shift))
+            {
+                this.ShiftUpArrow();
+                continue;
+            }
+            // Highlight text down one line - Shift+DownArrow
+            else if (keyinfo.Key == ConsoleKey.DownArrow && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Shift))
+            {
+                this.ShiftDownArrow();
+                continue;
+            }
+            // Highlight text to beginning of paragraph - Ctrl+Shift+Up
+            else if (keyinfo.Key == ConsoleKey.UpArrow && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control) && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Shift))
+            {
+                this.CtrlShiftUp();
+                continue;
+            }
+            // Highlight text to end of paragraph - Ctrl+Shift+Down
+            else if (keyinfo.Key == ConsoleKey.DownArrow && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control) && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Shift))
+            {
+                this.CtrlShiftDown();
+                continue;
+            }
+            // Highlight all text - Ctrl+A
+            else if (keyinfo.Key == ConsoleKey.A && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control))
+            {
+                this.CtrlA();
+                continue;
+            }
+            // Copy selected text - Ctrl+C
+            else if (keyinfo.Key == ConsoleKey.C && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control))
+            {
+                // Note: Console.TreatControlCAsInput = false in Program.cs and on class initialization
+                this.CtrlC();
+                continue;
+            }
             // Move cursor left one word - Ctrl+LeftArrow
             else if (keyinfo.Key == ConsoleKey.LeftArrow && keyinfo.Modifiers.HasFlag(ConsoleModifiers.Control))
             {
