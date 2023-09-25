@@ -312,7 +312,7 @@ public class Program
 
                 // Clear the screen
                 Console.SetCursorPosition(0, 1);
-                Console.Write(new string(' ', title.Length + 17));
+                Console.Write(new string(' ', Console.BufferWidth));
                 Console.SetCursorPosition(0, 1);
             }
 
