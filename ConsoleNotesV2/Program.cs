@@ -521,7 +521,7 @@ public class Program
                 Console.SetCursorPosition(0, 0);
 
                 string title = selected_note.Title == Note.EmptyTitle ? "Untitled" : selected_note.Title;
-                var rule = new Spectre.Console.Rule($"[deeppink3]Edit Note: {title}[/]");
+                var rule = new Spectre.Console.Rule($"[deeppink3] - {title}[/]");
                 rule.Style = new Style(Color.Yellow);
                 AnsiConsole.Write(rule);
 
