@@ -2,25 +2,30 @@
 using Spectre.Console;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
+using System.ComponentModel.Design;
+using System.Runtime.Serialization;
 
 namespace ConsoleNotes;
 
 struct TextRange
 {
     /// <summary>
-    /// The line the text range starts on
+    /// The line the text range starts on, (the index, starts at 0)
     /// </summary>
     public int StartLineNumber { get; set; }
+
     /// <summary>
-    /// The position of the starting character in <see cref="StartLineNumber"/>
+    /// The position of the starting character in <see cref="StartLineNumber"/>, (the index, starts at 0)
     /// </summary>
     public int StartCharacterPosition { get; set; }
+    
     /// <summary>
-    /// The line the text range ends on
+    /// The line the text range ends on (the index, starts at 0)
     /// </summary>
     public int EndLineNumber { get; set; }
+
     /// <summary>
-    /// The position of the ending character in <see cref="EndLineNumber"/>
+    /// The position of the ending character in <see cref="EndLineNumber"/>, (the index, starts at 0)
     /// </summary>
     public int EndCharacterPosition { get; set; }
 
@@ -30,6 +35,36 @@ struct TextRange
         this.StartCharacterPosition = start_character_position;
         this.EndLineNumber = end_line_number;
         this.EndCharacterPosition = end_character_position;
+    }
+
+    /// <summary>
+    /// Check if no text is selected
+    /// </summary>
+    /// <returns>True if no text is selected</returns>
+    public bool IsEmpty()
+    {
+        return StartLineNumber == 0 && EndLineNumber == 0 && StartCharacterPosition == 0 && EndCharacterPosition == 0;
+    }
+
+    /// <summary>
+    /// Is the selected text from left to right? Starting somewhere and moving to the right
+    /// <br/><br/>
+    /// The cursor is always at the end of the selection, but if the user selected text to the left of where he started,
+    /// the index of the ending character in the selection would be before the starting character. A -> B, where A is the start and B is the end
+    /// versus if the user selected text to the right of where he started, the cursor would be after the starting character. B <- A, where A is the start and B is the end
+    /// </summary>
+    /// <returns>True if the selection started and went to the right, making the cursor on the right side</returns>
+    public bool IsLeftToRight()
+    {
+        // The check can be done by seeing if the start is before the end
+        // A -> B
+        // as opposed to B <- A
+
+        if (EndLineNumber > StartLineNumber) return true;
+        if (EndLineNumber < StartLineNumber) return false;
+
+        // If starts and ends on the same line
+        return (EndCharacterPosition > StartCharacterPosition);
     }
 }
 
@@ -119,21 +154,49 @@ internal class Editor
     /// <returns></returns>
     private string GetSelectedContent()
     {
-        string s = string.Empty;
+        if (selected_text_range.IsEmpty()) return string.Empty;
 
-        for (int i = selected_text_range.StartLineNumber; i < selected_text_range.EndLineNumber; i++)
+        /**
+         * It is possible for the end position (index) to be less than the start position (index)
+         * because the user can start at a character and then select everything to the left of it.
+         * 
+         * This causes an issue with nothing being returned from this function, with the program
+         * thinking that nothing is highlighted.
+         * 
+         * Therefore, before the loop starts, the end position and start position will swap if
+         * the end position is less than the start position.
+         **/
+
+        if (selected_text_range.EndCharacterPosition < selected_text_range.StartCharacterPosition)
         {
-            if (lines.Count == i) break;
+            int tmp = selected_text_range.StartCharacterPosition;
+            selected_text_range.StartCharacterPosition = selected_text_range.EndCharacterPosition;
+            selected_text_range.EndCharacterPosition = tmp;
+        }
+
+        string s = string.Empty;
+        for (int i = selected_text_range.StartLineNumber; i <= selected_text_range.EndLineNumber; i++)
+        {
+            if (lines.Count == i) break; // Will give IndexOutOfRangeException when lines[i] is accessed if no check
+
+            // Empty line
+            if (lines[i].Count == 0)
+            {
+                s += '\n';
+                continue;
+            }
+            
             for (int j = 0; j < lines[i].Count; j++)
             {
-                // Skip characters before the start of the selected text
+                // Skip characters before the start of the selected text if on the starting line
                 if (i == selected_text_range.StartLineNumber && j < selected_text_range.StartCharacterPosition) continue;
+                // Skip characters after the end of the selected text if on the ending line
                 if (i == selected_text_range.EndLineNumber && j > selected_text_range.EndCharacterPosition) break;
-
+                // Add char
                 s += lines[i][j];
             }
 
-            if (i != selected_text_range.EndLineNumber - 1) s += '\n';
+            if (i != selected_text_range.EndLineNumber) s += '\n';
         }
 
         return s;
@@ -285,12 +348,12 @@ internal class Editor
                 continue;
             }
             // TODO: for each of these shift+direction functions, do something to the selected_text_range
-            //// Highlight text left one character - Shift+LeftArrow
-            //else if (keyinfo.Key == ConsoleKey.LeftArrow && shift)
-            //{
-            //    this.ShiftLeftArrow();
-            //    continue;
-            //}
+            // Highlight text left one character - Shift+LeftArrow
+            else if (keyinfo.Key == ConsoleKey.LeftArrow && shift)
+            {
+                this.ShiftLeftArrow();
+                continue;
+            }
             //// Highlight text right one character - Shift+RightArrow
             //else if (keyinfo.Key == ConsoleKey.RightArrow && shift)
             //{
@@ -913,9 +976,74 @@ internal class Editor
         Console.SetCursorPosition(ci, cli + 1);
     }
 
+    /// <summary>
+    /// Shift+LeftArrow - Toggle the selection of the character to the left
+    /// </summary>
+    private void ShiftLeftArrow()
+    {
+        // If the selection is from left to right, going left will shorten the selection (unselect)
+        // Otherwise, if the selection is going from right to left, by going left the selection will be extended
+
+        // Start a new selection as nothing is yet selected
+        if (selected_text_range.IsEmpty())
+        {
+            // Check if ci - 1 exists
+            if (ci - 1 < 0) return;
+
+            // The start and end lines are the same (cli)
+            // As the highlighting direction is left, the character that will be selected is the one to the left of the current char,
+            // meaning ci - 1
+            // Only one character is selected, so the start and end character positions are the same
+
+            selected_text_range = new(cli, ci - 1, cli, ci - 1);
+            ci--;
+            Console.CursorLeft--;
+
+            // Higlight the newly selected character
+            SetSelectBGandFG();
+            Console.Write(lines[cli][ci]); // not ci - 1 because ci was decreased a few lines above
+            // The cursor is moved back because it should be on the left side of what was highlighted,
+            // and the Console.Write moved it to the right side
+            Console.CursorLeft--;
+            SetDefaultBGandFG();
+        }
+        // Shorten selection
+        else if (selected_text_range.IsLeftToRight())
+        {
+            selected_text_range.EndCharacterPosition--;
+            ci--;
+            Console.CursorLeft--;
+
+            // Rewrite newly unselected character without highlight
+            SetDefaultBGandFG();
+            Console.Write(lines[cli][ci]);
+            Console.CursorLeft--;
+            SetDefaultBGandFG();
+        }
+        // Extend selection to the left
+        else
+        {
+            // The range cannot be extended any further left
+            if (selected_text_range.EndCharacterPosition == 0) return;
+
+            // The range gets extended left (meaning towards a lesser index), so end position is decreased
+            selected_text_range.EndCharacterPosition--;
+            ci--;
+            Console.CursorLeft--;
+
+            // Rewrite newly selected character with highlight
+            SetSelectBGandFG();
+            Console.Write(lines[cli][ci]);
+            // The cursor is moved back because it should be on the left side of what was highlighted,
+            // and the Console.Write moved it to the right side
+            Console.CursorLeft--;
+            SetDefaultBGandFG();
+        }
+    }
+
     private void CtrlA()
     {
-        this.selected_text_range = new(0, 0, lines.Count, lines[lines.Count - 1].Count);
+        this.selected_text_range = new(0, 0, lines.Count - 1, lines[lines.Count - 1].Count - 1);
 
         // Highlight the selected text
         Console.SetCursorPosition(0, 1);
@@ -1935,6 +2063,24 @@ internal class Editor
         return false;
     }
 
+    /// <summary>
+    /// Set Console.BackgroundColor and Console.ForegroundColor to the default colors (white FG, black BG)
+    /// </summary>
+    private void SetDefaultBGandFG()
+    {
+        Console.BackgroundColor = ConsoleColor.Black;
+        Console.ForegroundColor = ConsoleColor.White;
+    }
+
+    /// <summary>
+    /// Set Console.BackgroundColor and Console.ForegroundColor to the selected/highlighted text colors (black FG, white BG)
+    /// </summary>
+    private void SetSelectBGandFG()
+    {
+        Console.BackgroundColor = ConsoleColor.White;
+        Console.ForegroundColor = ConsoleColor.Black;
+    }
+
     private bool select_mode = false;
 
     /// <summary>
@@ -1954,14 +2100,19 @@ internal class Editor
     /// </summary>
     private void DeselectText()
     {
+        // Current position
+        int left = Console.CursorLeft;
+        int top = Console.CursorTop;
+
         // Change colors back to normal
         Console.BackgroundColor = ConsoleColor.Black;
         Console.ForegroundColor = ConsoleColor.White;
         select_mode = false;
 
-        // Unselect
+        // Unselect text by rewriting
         Console.SetCursorPosition(0, 1);
         Console.Write(GetNoteContent(0));
+        Console.SetCursorPosition(left, top);
 
         // Clear the selection
         selected_text_range = new(0, 0, 0, 0);
@@ -1970,7 +2121,6 @@ internal class Editor
     private void DeleteSelectedText()
     {
         this.DeselectText();
-
-        
+        throw new NotImplementedException();
     }
 }
