@@ -2,8 +2,7 @@
 using Spectre.Console;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
-using System.ComponentModel.Design;
-using System.Runtime.Serialization;
+using System.Net.Mail;
 
 namespace ConsoleNotes;
 
@@ -29,12 +28,18 @@ struct TextRange
     /// </summary>
     public int EndCharacterPosition { get; set; }
 
-    public TextRange(int start_line_number, int start_character_position, int end_line_number, int end_character_position)
+    /// <summary>
+    /// Is the selected text from left to right? Starting somewhere and moving to the right
+    /// </summary>
+    public bool IsLeftToRight { get; set; }
+
+    public TextRange(int start_line_number, int start_character_position, int end_line_number, int end_character_position, bool is_left_to_right)
     {
         this.StartLineNumber = start_line_number;
         this.StartCharacterPosition = start_character_position;
         this.EndLineNumber = end_line_number;
         this.EndCharacterPosition = end_character_position;
+        this.IsLeftToRight = is_left_to_right;
     }
 
     /// <summary>
@@ -44,27 +49,6 @@ struct TextRange
     public bool IsEmpty()
     {
         return StartLineNumber == 0 && EndLineNumber == 0 && StartCharacterPosition == 0 && EndCharacterPosition == 0;
-    }
-
-    /// <summary>
-    /// Is the selected text from left to right? Starting somewhere and moving to the right
-    /// <br/><br/>
-    /// The cursor is always at the end of the selection, but if the user selected text to the left of where he started,
-    /// the index of the ending character in the selection would be before the starting character. A -> B, where A is the start and B is the end
-    /// versus if the user selected text to the right of where he started, the cursor would be after the starting character. B <- A, where A is the start and B is the end
-    /// </summary>
-    /// <returns>True if the selection started and went to the right, making the cursor on the right side</returns>
-    public bool IsLeftToRight()
-    {
-        // The check can be done by seeing if the start is before the end
-        // A -> B
-        // as opposed to B <- A
-
-        if (EndLineNumber > StartLineNumber) return true;
-        if (EndLineNumber < StartLineNumber) return false;
-
-        // If starts and ends on the same line
-        return (EndCharacterPosition > StartCharacterPosition);
     }
 }
 
@@ -127,7 +111,7 @@ internal class Editor
     /// <summary>
     /// Keep track of the selected/highlighted text
     /// </summary>
-    private TextRange selected_text_range = new(0, 0, 0, 0);
+    private TextRange selected_text_range = new(0, 0, 0, 0, false);
 
     /// <summary>
     /// Concatenate the note into a single string
@@ -155,24 +139,6 @@ internal class Editor
     private string GetSelectedContent()
     {
         if (selected_text_range.IsEmpty()) return string.Empty;
-
-        /**
-         * It is possible for the end position (index) to be less than the start position (index)
-         * because the user can start at a character and then select everything to the left of it.
-         * 
-         * This causes an issue with nothing being returned from this function, with the program
-         * thinking that nothing is highlighted.
-         * 
-         * Therefore, before the loop starts, the end position and start position will swap if
-         * the end position is less than the start position.
-         **/
-
-        if (selected_text_range.EndCharacterPosition < selected_text_range.StartCharacterPosition)
-        {
-            int tmp = selected_text_range.StartCharacterPosition;
-            selected_text_range.StartCharacterPosition = selected_text_range.EndCharacterPosition;
-            selected_text_range.EndCharacterPosition = tmp;
-        }
 
         string s = string.Empty;
         for (int i = selected_text_range.StartLineNumber; i <= selected_text_range.EndLineNumber; i++)
@@ -348,28 +314,40 @@ internal class Editor
                 continue;
             }
             // TODO: for each of these shift+direction functions, do something to the selected_text_range
+            // Highlight text left one word - Ctrl+Shift+LeftArrow
+            else if (keyinfo.Key == ConsoleKey.LeftArrow && ctrl && shift)
+            {
+                this.CtrlShiftLeftArrow();
+                continue;
+            }
+            // Highlight text right one word - Ctrl+Shift+RightArrow
+            else if (keyinfo.Key == ConsoleKey.RightArrow && ctrl && shift)
+            {
+                this.CtrlShiftRightArrow();
+                continue;
+            }
             // Highlight text left one character - Shift+LeftArrow
             else if (keyinfo.Key == ConsoleKey.LeftArrow && shift)
             {
                 this.ShiftLeftArrow();
                 continue;
             }
-            //// Highlight text right one character - Shift+RightArrow
-            //else if (keyinfo.Key == ConsoleKey.RightArrow && shift)
+            // Highlight text right one character - Shift+RightArrow
+            else if (keyinfo.Key == ConsoleKey.RightArrow && shift)
+            {
+                this.ShiftRightArrow();
+                continue;
+            }
+            //// Highlight text to beginning of paragraph - Ctrl+Shift+Up
+            //else if (keyinfo.Key == ConsoleKey.UpArrow && ctrl && shift)
             //{
-            //    this.ShiftRightArrow();
+            //    this.CtrlShiftUp();
             //    continue;
             //}
-            //// Highlight text left one word - Ctrl+Shift+LeftArrow
-            //else if (keyinfo.Key == ConsoleKey.LeftArrow && ctrl && shift)
+            //// Highlight text to end of paragraph - Ctrl+Shift+Down
+            //else if (keyinfo.Key == ConsoleKey.DownArrow && ctrl && shift)
             //{
-            //    this.CtrlShiftLeftArrow();
-            //    continue;
-            //}
-            //// Highlight text right one word - Ctrl+Shift+RightArrow
-            //else if (keyinfo.Key == ConsoleKey.RightArrow && ctrl && shift)
-            //{
-            //    this.CtrlShiftRightArrow();
+            //    this.CtrlShiftDown();
             //    continue;
             //}
             //// Highlight text up one line - Shift+UpArrow
@@ -382,18 +360,6 @@ internal class Editor
             //else if (keyinfo.Key == ConsoleKey.DownArrow && shift)
             //{
             //    this.ShiftDownArrow();
-            //    continue;
-            //}
-            //// Highlight text to beginning of paragraph - Ctrl+Shift+Up
-            //else if (keyinfo.Key == ConsoleKey.UpArrow && ctrl && shift)
-            //{
-            //    this.CtrlShiftUp();
-            //    continue;
-            //}
-            //// Highlight text to end of paragraph - Ctrl+Shift+Down
-            //else if (keyinfo.Key == ConsoleKey.DownArrow && ctrl && shift)
-            //{
-            //    this.CtrlShiftDown();
             //    continue;
             //}
             // Highlight all text - Ctrl+A
@@ -927,7 +893,7 @@ internal class Editor
         }
 
         // Move cursor to next line
-        Console.SetCursorPosition(0, cli + 1);
+        Console.SetCursorPosition(0, cli + 1); // +1 for header line
 
         // Check save
         chars_pressed += 2; // Enter counts as 2 chars pressed
@@ -973,7 +939,7 @@ internal class Editor
     {
         cli = lines.Count - 1;
         ci = lines[cli].Count;
-        Console.SetCursorPosition(ci, cli + 1);
+        Console.SetCursorPosition(ci, cli + 1); // +1 for header line
     }
 
     /// <summary>
@@ -984,31 +950,56 @@ internal class Editor
         // If the selection is from left to right, going left will shorten the selection (unselect)
         // Otherwise, if the selection is going from right to left, by going left the selection will be extended
 
-        // Start a new selection as nothing is yet selected
+        // Start a new selection if nothing is yet selected
         if (selected_text_range.IsEmpty())
         {
-            // Check if ci - 1 exists
-            if (ci - 1 < 0) return;
+            // If the cursor cannot go any further left on the current line
+            if (ci == 0)
+            {
+                // If the current line is the first line, do nothing
+                if (cli == 0) return;
+                cli--;
+                
+                ci = lines[cli].Count - 1;
+                bool empty_line = ci == -1;
+                if (empty_line) ci = 0;
+                
+                selected_text_range = new(cli, ci, cli, ci, false);
+                EnableSelectMode();
+
+                // Highlight the last character of the previous line
+                Console.SetCursorPosition(ci, cli + 1); // +1 for header line
+                SetSelectBGandFG();
+
+                if (empty_line) Console.Write(' ');
+                else Console.Write(lines[cli][ci]);
+                
+                Console.CursorLeft--;
+                SetDefaultBGandFG();
+                return;
+            }
 
             // The start and end lines are the same (cli)
             // As the highlighting direction is left, the character that will be selected is the one to the left of the current char,
             // meaning ci - 1
-            // Only one character is selected, so the start and end character positions are the same
+            // Only one character is selected, so the start and end character positions are equal to each other
 
-            selected_text_range = new(cli, ci - 1, cli, ci - 1);
-            ci--;
+            // Is right to left, not left to right
+            selected_text_range = new(cli, ci - 1, cli, ci - 1, false);
             Console.CursorLeft--;
 
             // Higlight the newly selected character
             SetSelectBGandFG();
-            Console.Write(lines[cli][ci]); // not ci - 1 because ci was decreased a few lines above
+            Console.Write(lines[cli][--ci]);
             // The cursor is moved back because it should be on the left side of what was highlighted,
             // and the Console.Write moved it to the right side
             Console.CursorLeft--;
             SetDefaultBGandFG();
+            EnableSelectMode();
         }
+        // Is Left to Right (towards end)
         // Shorten selection
-        else if (selected_text_range.IsLeftToRight())
+        else if (selected_text_range.IsLeftToRight)
         {
             selected_text_range.EndCharacterPosition--;
             ci--;
@@ -1020,14 +1011,41 @@ internal class Editor
             Console.CursorLeft--;
             SetDefaultBGandFG();
         }
+        // Is Right to Left (towards start)
         // Extend selection to the left
         else
         {
-            // The range cannot be extended any further left
-            if (selected_text_range.EndCharacterPosition == 0) return;
+            // If the range cannot be extended any further left on the current line
+            if (selected_text_range.StartCharacterPosition == 0)
+            {
+                // If the current line is the first line, do nothing
+                if (cli == 0) return;
+                cli--;
+
+                // Highlight the last character of the previous line
+                ci = lines[cli].Count - 1;
+                bool empty_line = ci == -1;
+                if (empty_line) ci = 0;
+
+                selected_text_range.StartLineNumber--;
+                selected_text_range.StartCharacterPosition = ci;
+
+                Console.SetCursorPosition(ci, cli + 1); // +1 for header line
+                SetSelectBGandFG();
+                
+                // If empty line
+                if (empty_line) Console.Write(' ');
+                else Console.Write(lines[cli][ci]);
+
+                Console.CursorLeft--;
+                SetDefaultBGandFG();
+                return;
+            }
+
+            // If the range CAN be extended further left on the current line
 
             // The range gets extended left (meaning towards a lesser index), so end position is decreased
-            selected_text_range.EndCharacterPosition--;
+            selected_text_range.StartCharacterPosition--;
             ci--;
             Console.CursorLeft--;
 
@@ -1041,12 +1059,306 @@ internal class Editor
         }
     }
 
+    private void ShiftRightArrow()
+    {
+        // If the selection is from left to right, going right will lengthen the selection (select more)
+        // Otherwise, if the selection is going from right to left, by going right the selection will be extended
+
+        // Start a new selection if nothing is yet selected
+        if (selected_text_range.IsEmpty())
+        {
+            // If the cursor cannot go any further right on the current line
+            if (ci == lines[cli].Count)
+            {
+                // Check if the current line is the last line; if it's possible to create a selection on the next line
+                if (cli == lines.Count - 1) return;
+
+                cli++;
+                ci = 0;
+                selected_text_range = new(cli, ci, cli, ci, true);
+
+                Console.SetCursorPosition(ci, cli + 1); // +1 for header line
+                SetSelectBGandFG();
+
+                // If empty_line
+                if (lines[cli].Count == 0) Console.Write(' ');
+                else Console.Write(lines[cli][ci++]);
+
+                SetDefaultBGandFG();
+                EnableSelectMode();
+                return;
+            }
+
+            // The start and end lines are the same (cli)
+            // As the highlighting direction is right, the character that will be selected is the current char
+            // Example: in "l^orem", (^ is cursor pos) going to the right will highlight the o, even though the cursor is at o
+            // Only one character is selected (ci), so the start and end character positions are equal to each other
+
+            // Is left to right, not right to left
+            selected_text_range = new(cli, ci, cli, ci, true);
+
+            // Higlight the newly selected character
+            SetSelectBGandFG();
+            Console.Write(lines[cli][ci++]);
+            SetDefaultBGandFG();
+            EnableSelectMode();
+        }
+        // Is Left to Right (towards end)
+        // Lengthen selection
+        else if (selected_text_range.IsLeftToRight)
+        {
+            // If the range cannot be extended any further right
+            if (selected_text_range.EndCharacterPosition == lines[cli].Count - 1 || lines[cli].Count == 0)
+            {
+                // Check if the current line is the last line; if it's possible to extend the selection to the next line
+                if (selected_text_range.EndLineNumber == lines.Count - 1) return;
+
+                selected_text_range.EndLineNumber++;
+                cli++;
+                ci = 0;
+                selected_text_range.EndCharacterPosition = 0;
+                Console.SetCursorPosition(ci, cli + 1); // +1 for header line
+                SetSelectBGandFG();
+
+                // If empty_line
+                if (lines[cli].Count == 0) Console.Write(' ');
+                else Console.Write(lines[cli][ci++]);
+
+                SetDefaultBGandFG();
+                return;
+            }
+
+            selected_text_range.EndCharacterPosition++;
+
+            // Rewrite newly selected character with highlight
+            SetSelectBGandFG();
+            Console.Write(lines[cli][ci++]);
+            SetDefaultBGandFG();
+        }
+        // Is Right to Left (towards start)
+        // Shorten selection to the right
+        else
+        {
+            // The range gets shortened right
+            selected_text_range.StartCharacterPosition++;
+
+            // Rewrite newly unselected character without highlight
+            SetDefaultBGandFG();
+            Console.Write(lines[cli][ci++]);
+        }
+    }
+
+    private void CtrlShiftLeftArrow()
+    {
+        // If the selection is from left to right, going left will shorten the selection (unselect)
+        // Otherwise, if the selection is going from right to left, by going left the selection will be extended
+
+        int x = CharsLeftUntillNextSpaceOrEOL(cli ,ci);
+
+        // Start a new selection if nothing is yet selected
+        if (selected_text_range.IsEmpty())
+        {
+            // If the range cannot be extended any further left on the current line
+            if (ci == 0)
+            {
+                // If the current line is the first line, do nothing
+                if (cli == 0) return;
+                cli--;
+
+                ci = lines[cli].Count - 1;
+                bool empty_line = ci == -1;
+                if (empty_line) ci = 0;
+
+                selected_text_range = new(cli, ci, cli, ci, false);
+
+                // Highlight the last character of the previous line
+                Console.SetCursorPosition(ci, cli + 1); // +1 for header line
+                SetSelectBGandFG();
+
+                if (empty_line) Console.Write(' ');
+                else Console.Write(lines[cli][ci]);
+
+                Console.CursorLeft--;
+                SetDefaultBGandFG();
+                EnableSelectMode();
+                return;
+            }
+
+            // Is right to left, not left to right
+            selected_text_range = new(cli, ci - x, cli, ci, false);
+            Console.CursorLeft -= x;
+
+            // Higlight the newly selected character
+            SetSelectBGandFG();
+            Console.Write(lines[cli].GetRange(ci - x, x).ToArray());
+            ci -= x;
+            // The cursor is moved back because it should be on the left side of what was highlighted,
+            // and the Console.Write moved it to the right side
+            Console.CursorLeft -= x;
+            SetDefaultBGandFG();
+            EnableSelectMode();
+        }
+        // Is Left to Right (towards end)
+        // Shorten selection
+        else if (selected_text_range.IsLeftToRight)
+        {
+            selected_text_range.EndCharacterPosition -= x;
+            Console.CursorLeft -= x;
+
+            // Rewrite newly unselected character without highlight
+            SetDefaultBGandFG();
+            Console.Write(lines[cli].GetRange(ci - x, x).ToArray());
+            ci -= x;
+            Console.CursorLeft -= x;
+            SetDefaultBGandFG();
+        }
+        // Is Right to Left (towards start)
+        // Extend selection to the left
+        else
+        {
+            // If the range cannot be extended any further left on the current line
+            if (selected_text_range.StartCharacterPosition == 0)
+            {
+                // If the current line is the first line, do nothing
+                if (cli == 0) return;
+                cli--;
+
+                ci = lines[cli].Count - 1;
+                bool empty_line = ci == -1;
+                if (empty_line) ci = 0;
+
+                selected_text_range.StartLineNumber--;
+                selected_text_range.StartCharacterPosition = ci;
+
+                // Highlight the last character of the previous line
+                Console.SetCursorPosition(ci, cli + 1); // +1 for header line
+                SetSelectBGandFG();
+
+                if (empty_line) Console.Write(' ');
+                else Console.Write(lines[cli][ci]);
+
+                Console.CursorLeft--;
+                SetDefaultBGandFG();
+                return;
+            }
+
+            // If the range CAN be extended further left on the current line
+
+            // The range gets extended left (meaning towards a lesser index), so end position is decreased
+            selected_text_range.StartCharacterPosition -= x;
+            Console.CursorLeft -= x;
+
+            // Rewrite newly selected character with highlight
+            SetSelectBGandFG();
+            Console.Write(lines[cli].GetRange(ci - x, x).ToArray());
+            ci -= x;
+            // The cursor is moved back because it should be on the left side of what was highlighted,
+            // and the Console.Write moved it to the right side
+            Console.CursorLeft -= x;
+            SetDefaultBGandFG();
+        }
+    }
+
+    private void CtrlShiftRightArrow()
+    {
+        // If the selection is from left to right, going left will shorten the selection (unselect)
+        // Otherwise, if the selection is going from right to left, by going left the selection will be extended
+
+        int x = CharsRightUntilNextSpaceOrEOL(cli, ci);
+
+        // Start a new selection if nothing is yet selected
+        if (selected_text_range.IsEmpty())
+        {
+            // If the cursor cannot go any further right on the current line
+            if (ci == lines[cli].Count)
+            {
+                // Check if the current line is the last line; if it's possible to create a selection on the next line
+                if (cli == lines.Count - 1) return;
+
+                cli++;
+                ci = 0;
+                selected_text_range = new(cli, ci, cli, ci, true);
+
+                Console.SetCursorPosition(ci, cli + 1); // +1 for header line
+                SetSelectBGandFG();
+
+                //  If empty_line
+                if (lines[cli].Count == 0) Console.Write(' ');
+                else Console.Write(lines[cli][ci++]);
+
+                SetDefaultBGandFG();
+                EnableSelectMode();
+                return;
+            }
+
+            // The start and end lines are the same (cli)
+            // As the highlighting direction is right, the character that will be selected is the current char
+            // Example: in "l^orem", (^ is cursor pos) going to the right will highlight the o, even though the cursor is at o
+            // Only one character is selected (ci), so the start and end character positions are equal to each other
+
+            // Is left to right, not right to left
+            selected_text_range = new(cli, ci, cli, ci + x, true);
+
+            // Higlight the newly selected character
+            SetSelectBGandFG();
+            Console.Write(lines[cli].GetRange(ci, x).ToArray());
+            ci += x;
+            SetDefaultBGandFG();
+            EnableSelectMode();
+        }
+        // Is Left to Right (towards end)
+        // Lengthen selection
+        else if (selected_text_range.IsLeftToRight)
+        {
+            // If the range cannot be extended any further right
+            if (selected_text_range.EndCharacterPosition == lines[cli].Count)
+            {
+                // Check if the current line is the last line; if it's possible to extend the selection to the next line
+                if (selected_text_range.EndLineNumber == lines.Count - 1) return;
+
+                selected_text_range.EndLineNumber++;
+                cli++;
+                ci = 0;
+                selected_text_range.EndCharacterPosition = 0;
+                Console.SetCursorPosition(ci, cli + 1); // +1 for header line
+                SetSelectBGandFG();
+
+                //  If empty_line
+                if (lines[cli].Count == 0) Console.Write(' ');
+                else Console.Write(lines[cli][ci++]);
+
+                SetDefaultBGandFG();
+                return;
+            }
+
+            selected_text_range.EndCharacterPosition += x;
+
+            // Rewrite newly selected character with highlight
+            SetSelectBGandFG();
+            Console.Write(lines[cli].GetRange(ci, x).ToArray());
+            ci += x;
+            SetDefaultBGandFG();
+        }
+        // Is Right to Left (towards start)
+        // Shorten selection to the right
+        else
+        {
+            // The range gets shortened right
+            selected_text_range.StartCharacterPosition += x;
+
+            // Rewrite newly unselected character without highlight
+            SetDefaultBGandFG();
+            Console.Write(lines[cli].GetRange(ci, x).ToArray());
+            ci += x;
+        }
+    }
+
     private void CtrlA()
     {
-        this.selected_text_range = new(0, 0, lines.Count - 1, lines[lines.Count - 1].Count - 1);
+        this.selected_text_range = new(0, 0, lines.Count - 1, lines[lines.Count - 1].Count - 1, true);
 
         // Highlight the selected text
-        Console.SetCursorPosition(0, 1);
+        Console.SetCursorPosition(0, 1); // +1 for header line
         EnableSelectMode();
         Console.Write(GetNoteContent(0));
         cli = lines.Count - 1;
@@ -1135,7 +1447,7 @@ internal class Editor
             if (cli > 0)
             {
                 ci = lines[cli - 1].Count;
-                Console.SetCursorPosition(ci, Console.CursorTop - 1);
+                Console.SetCursorPosition(ci, Console.CursorTop - 1); // -1 for header line
                 cli--;
             }
         }
@@ -1206,7 +1518,7 @@ internal class Editor
             // Move to the next line
             ci = 0;
             cli++;
-            Console.SetCursorPosition(0, Console.CursorTop + 1);
+            Console.SetCursorPosition(0, Console.CursorTop + 1); // +1 for header line
         }
     }
 
@@ -1250,7 +1562,7 @@ internal class Editor
             // Move to the next line
             ci = 0;
             cli++;
-            Console.SetCursorPosition(0, Console.CursorTop + 1);
+            Console.SetCursorPosition(0, Console.CursorTop + 1); // +1 for header line
         }
     }
 
@@ -1285,7 +1597,7 @@ internal class Editor
         // Move to the next line
         int left_pos = (Console.CursorLeft < lines[++cli].Count) ? Console.CursorLeft : lines[cli].Count;
         ci = left_pos;
-        Console.SetCursorPosition(left_pos, Console.CursorTop + 1);
+        Console.SetCursorPosition(left_pos, Console.CursorTop + 1); // +1 for header line
     }
 
     /// <summary>
@@ -1298,7 +1610,7 @@ internal class Editor
         {
             int left_pos = (Console.CursorLeft < lines[--cli].Count) ? Console.CursorLeft : lines[cli].Count;
             ci = left_pos;
-            Console.SetCursorPosition(left_pos, Console.CursorTop - 1);
+            Console.SetCursorPosition(left_pos, Console.CursorTop - 1); // +1 for header line
         }
     }
 
@@ -1415,7 +1727,7 @@ internal class Editor
                 ci = prev_line_length;
 
                 // There is too much text to wipe (would be every line below the current), so the best move is to clear everything and rewrite
-                int[] start_rewriting_from = new int[2] { Console.CursorLeft, Console.CursorTop - 1 }; // Rewrite the current line as well (top - 1)
+                int[] start_rewriting_from = new int[2] { Console.CursorLeft, Console.CursorTop - 1 }; // Rewrite the current line as well (top - 1), -1 for header line
                 Console.Write(new string(' ', (lines.Count - cli) * Console.BufferWidth));
                 Console.SetCursorPosition(start_rewriting_from[0], start_rewriting_from[1]);
 
@@ -1554,7 +1866,7 @@ internal class Editor
                 ci = prev_line_length;
 
                 // There is too much text to wipe, so the best move is to clear everything and rewrite
-                int[] start_rewriting_from = new int[2] { Console.CursorLeft, Console.CursorTop - 1 }; // Rewrite the current line as well (top - 1)
+                int[] start_rewriting_from = new int[2] { Console.CursorLeft, Console.CursorTop - 1 }; // Rewrite the current line as well (top - 1), -1 for header line
                 Console.Write(new string(' ', (lines.Count - cli) * Console.BufferWidth));
                 Console.SetCursorPosition(start_rewriting_from[0], start_rewriting_from[1]);
 
@@ -1648,7 +1960,7 @@ internal class Editor
 
             for (int i = 0; i < lines.Count - cli + 1; i++)
             {
-                Console.SetCursorPosition(0, Console.CursorTop + 1);
+                Console.SetCursorPosition(0, Console.CursorTop + 1); // +1 for header line
                 Console.Write(new string(' ', Console.BufferWidth));
             }
 
@@ -1699,7 +2011,7 @@ internal class Editor
 
             for (int i = 0; i < lines.Count - cli + 1; i++)
             {
-                Console.SetCursorPosition(0, Console.CursorTop + 1);
+                Console.SetCursorPosition(0, Console.CursorTop + 1); // +1 for header line
                 Console.Write(new string(' ', Console.BufferWidth));
             }
 
@@ -1785,7 +2097,7 @@ internal class Editor
         }
 
         // Reset cursor loc
-        Console.SetCursorPosition(ci, cli + 1);
+        Console.SetCursorPosition(ci, cli + 1); // +1 for header line
 
         // Check save
         chars_pressed += 2; // Deleting the line counts as 2 chars pressed
@@ -2111,16 +2423,68 @@ internal class Editor
 
         // Unselect text by rewriting
         Console.SetCursorPosition(0, 1);
-        Console.Write(GetNoteContent(0));
+        Console.Write(GetNoteContent(0).Replace("\n", " \n"));
         Console.SetCursorPosition(left, top);
 
         // Clear the selection
-        selected_text_range = new(0, 0, 0, 0);
+        selected_text_range = new(0, 0, 0, 0, false);
     }
 
     private void DeleteSelectedText()
     {
         this.DeselectText();
-        throw new NotImplementedException();
+        throw new NotImplementedException(); // TODO: Implement
+    }
+
+    /// <summary>
+    /// Find the amount of characters in the left direction to get to the next space character or to get to the start of the line (EOL)
+    /// </summary>
+    /// <param name="_cli">The index of the current line to look at</param>
+    /// <param name="_ci">The index of the current character in the cli to start looking from</param>
+    /// <returns>The amount of characters to get to the next space character or the start of the line (EOL), going left</returns>
+    private int CharsLeftUntillNextSpaceOrEOL(int _cli, int _ci)
+    {
+        if (_ci == 0) return 0;
+
+        int x = 0;
+        int search_buffer = 0;
+        while (x == 0)
+        {
+            for (int i = _ci - 1 - search_buffer; i >= 0; i--)
+            {
+                if (lines[_cli][i] == ' ') break;
+                x++;
+            }
+
+            search_buffer++;
+        }
+
+        return x + search_buffer - 1;
+    }
+
+    /// <summary>
+    /// Find the amount of characters in the right direction to get to the next space character or to get to the end of the line (EOL)
+    /// </summary>
+    /// <param name="_cli">The index of the current line to look at</param>
+    /// <param name="_ci">The index of the current character in the cli to start looking from</param>
+    /// <returns>The amount of characters to get to the next space character or the end of the line (EOL), going right</returns>
+    private int CharsRightUntilNextSpaceOrEOL(int _cli, int _ci)
+    {
+        if (_ci == lines[_cli].Count) return 0;
+
+        int x = 0;
+        int search_buffer = 0;
+        while (x == 0)
+        {
+            for (int i = _ci + 1 + search_buffer; i < lines[_cli].Count; i++)
+            {
+                if (lines[_cli][i] == ' ') break;
+                x++;
+            }
+
+            search_buffer++;
+        }
+
+        return x + search_buffer;
     }
 }
