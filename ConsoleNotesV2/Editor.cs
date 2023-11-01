@@ -2,7 +2,6 @@
 using Spectre.Console;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
-using System.Net.Mail;
 
 namespace ConsoleNotes;
 
@@ -48,7 +47,7 @@ struct TextRange
     /// <returns>True if no text is selected</returns>
     public bool IsEmpty()
     {
-        return StartLineNumber == 0 && EndLineNumber == 0 && StartCharacterPosition == 0 && EndCharacterPosition == 0;
+        return StartLineNumber == -1 && EndLineNumber == -1 && StartCharacterPosition == -1 && EndCharacterPosition == -1;
     }
 }
 
@@ -111,7 +110,7 @@ internal class Editor
     /// <summary>
     /// Keep track of the selected/highlighted text
     /// </summary>
-    private TextRange selected_text_range = new(0, 0, 0, 0, false);
+    private TextRange selected_text_range = new(-1, -1, -1, -1, false);
 
     /// <summary>
     /// Concatenate the note into a single string
@@ -1310,8 +1309,12 @@ internal class Editor
         // Lengthen selection
         else if (selected_text_range.IsLeftToRight)
         {
+            // The third check in parnethesis, (selected_text_range.StartLineNumber == cli && selected_text_range.EndCharacterPosition == lines[cli].Count), is required because when the
+            // cursor is on the first line of the selection, the indexing is messed up for some reason, and is 1 more than it should be. So, if the cursor is on the first line of the selection, check for if the
+            // EndCharacterPosition == lines[cli].Count instead of (lines[cli].Count - 1)
+
             // If the range cannot be extended any further right
-            if (selected_text_range.EndCharacterPosition == lines[cli].Count)
+            if (lines[cli].Count == 0 || selected_text_range.EndCharacterPosition == lines[cli].Count - 1 || (selected_text_range.StartLineNumber == cli && selected_text_range.EndCharacterPosition == lines[cli].Count))
             {
                 // Check if the current line is the last line; if it's possible to extend the selection to the next line
                 if (selected_text_range.EndLineNumber == lines.Count - 1) return;
@@ -1323,7 +1326,7 @@ internal class Editor
                 Console.SetCursorPosition(ci, cli + 1); // +1 for header line
                 SetSelectBGandFG();
 
-                //  If empty_line
+                // If empty_line
                 if (lines[cli].Count == 0) Console.Write(' ');
                 else Console.Write(lines[cli][ci++]);
 
@@ -2427,7 +2430,7 @@ internal class Editor
         Console.SetCursorPosition(left, top);
 
         // Clear the selection
-        selected_text_range = new(0, 0, 0, 0, false);
+        selected_text_range = new(-1, -1, -1, -1, false);
     }
 
     private void DeleteSelectedText()
