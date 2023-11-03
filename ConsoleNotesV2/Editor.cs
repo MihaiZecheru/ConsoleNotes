@@ -234,6 +234,9 @@ internal class Editor
     /// <returns>A success value indicating whether or not the user finished writing their note</returns>
     public bool MainLoop(ref string note_body, ref bool _isJson)
     {
+        // If the program fails at any point, save the note and the error message in a crash log
+        // No indent to make it easier to read
+        try {
         // Loop for getting input
         while (true)
         {
@@ -657,6 +660,46 @@ internal class Editor
                 states.AddState(lines, Tuple.Create(ci, cli));
                 chars_pressed = 0;
             }
+        }
+        }
+        catch (Exception e)
+        {
+            string timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
+            string crashLogPath = Path.Combine(System.IO.Directory.GetCurrentDirectory(), "crash_log", timestamp);
+
+            // Create the crash log folder
+            Directory.CreateDirectory(crashLogPath);
+
+            // Save note
+            string _note = GetNoteContent(0);
+            File.WriteAllText(Path.Combine(crashLogPath, "note.txt"), _note);
+            TextCopy.ClipboardService.SetText(_note);
+
+            // Save error message
+            File.WriteAllText(Path.Combine(crashLogPath, "error.txt"), e.ToString());
+
+            // Show error message
+            string note_path = Path.Combine(crashLogPath, "note.txt");
+            Program.MessageBox((IntPtr)0, $"The application crashed due to an unknown error. Your note has been copied to clipboard and saved to\n\n{note_path}", "Application Crashed", 0);
+
+            try
+            {
+                // Open file explorer to the crash log
+                System.Diagnostics.Process.Start(crashLogPath);
+            } catch (Exception)
+            {
+                // If there is an access denied error, due to the application being run from inside C:/Users/<user>/, ask to copy (yes or no buttons)
+                int result = Program.MessageBox((IntPtr)0, "Error opening crash log in file explorer - Access to file denied. Do you want to copy the file path to clipboard?", "Error opening crash log", 4);
+
+                // If user presses 'Yes'
+                if (result == 6)
+                {
+                    TextCopy.ClipboardService.SetText(crashLogPath);
+                }
+            }
+
+            // Close the editor
+            return false;
         }
     }
 
